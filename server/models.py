@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 import uuid
@@ -21,8 +22,17 @@ class Monitor(Base):
     monitor_id = Column(Integer, primary_key=True, index=True)
     session_id = Column(String, ForeignKey('sessions.id'), primary_key=True)
     policy_id = Column(Integer, ForeignKey('policies.policy_id'))
-    trace = Column(Text, nullable=True)
     UniqueConstraint('monitor_id', 'session_id', name='unique_monitor_per_session')
 
     policy = relationship("Policy")
     session = relationship("Session")
+    traces = relationship("MonitorTrace", back_populates="monitor")
+
+class MonitorTrace(Base):
+    __tablename__ = 'monitor_traces'
+    id = Column(Integer, primary_key=True, index=True)
+    monitor_id = Column(Integer, ForeignKey('monitors.monitor_id'))
+    session_id = Column(String, ForeignKey('monitors.session_id'))
+    trace = Column(Text, nullable=False)
+
+    monitor = relationship("Monitor", back_populates="traces")
