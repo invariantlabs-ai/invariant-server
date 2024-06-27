@@ -11,6 +11,9 @@ class PolicyBase(BaseModel):
 class PolicyCreate(BaseModel):
     rule: str
 
+class PolicyAnalyze(BaseModel):
+    trace: List[Dict]
+
 class Policy(PolicyBase):
     model_config = ConfigDict(from_attributes=True)
     policy_id: int
