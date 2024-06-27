@@ -1,0 +1,3 @@
+import ipc
+
+ipc.hello()
