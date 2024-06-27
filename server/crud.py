@@ -49,9 +49,9 @@ def get_next_monitor_id(db: Session, session_id: str):
         return max_monitor_id.monitor_id + 1
     return 1
 
-def create_monitor(db: Session, monitor: schemas.MonitorCreate):
-    next_monitor_id = get_next_monitor_id(db, monitor.session_id)
-    db_monitor = models.Monitor(monitor_id=next_monitor_id, **monitor.dict())
+def create_monitor(db: Session, session_id: str, policy_id: int):
+    next_monitor_id = get_next_monitor_id(db, session_id)
+    db_monitor = models.Monitor(monitor_id=next_monitor_id, session_id=session_id, policy_id=policy_id)
     db.add(db_monitor)
     db.commit()
     db.refresh(db_monitor)

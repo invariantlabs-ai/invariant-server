@@ -8,8 +8,8 @@ class PolicyBase(BaseModel):
     rule: str
     session_id: str
 
-class PolicyCreate(PolicyBase):
-    pass
+class PolicyCreate(BaseModel):
+    rule: str
 
 class Policy(PolicyBase):
     policy_id: int
@@ -21,8 +21,8 @@ class MonitorBase(BaseModel):
     policy_id: int
     session_id: str
 
-class MonitorCreate(MonitorBase):
-    pass
+class MonitorCreate(BaseModel):
+    policy_id: int
 
 class MonitorTraceBase(BaseModel):
     trace: List[Dict]
@@ -38,6 +38,7 @@ class MonitorTrace(MonitorTraceBase):
 
 class Monitor(MonitorBase):
     monitor_id: int
+    policy_id: int
     traces: List[MonitorTrace] = []
 
     class Config:
