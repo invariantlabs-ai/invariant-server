@@ -30,8 +30,8 @@ class Monitor(Base):
 class MonitorTrace(Base):
     __tablename__ = 'monitor_traces'
     id = Column(Integer, primary_key=True, index=True)
-    monitor_id = Column(Integer, ForeignKey('monitors.monitor_id'))
-    session_id = Column(String, ForeignKey('monitors.session_id'))
     trace = Column(JSON, nullable=False)
+    monitor_id = Column(Integer, ForeignKey('monitors.monitor_id'))
+    session_id = Column(String, ForeignKey('sessions.id'))
 
-    monitor = relationship("Monitor", back_populates="traces")
+    monitor = relationship("Monitor", back_populates="traces", foreign_keys=[monitor_id, session_id])
