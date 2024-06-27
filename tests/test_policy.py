@@ -48,4 +48,21 @@ def test_policy_view():
     assert response.json()["rule"] == "rule 2" and response.json()["policy_id"] == 2
     response = client.get("/policy?session_id=" + session_id)
     assert response.status_code == 200
-    assert len(response.json()) == 2
+    response_json = response.json()
+    assert len(response_json) == 2 and response_json[0]["rule"] == "rule 1" and response_json[1]["rule"] == "rule 2" and response_json[0]["policy_id"] == 1 and response_json[1]["policy_id"] == 2
+
+def test_policy_update():
+    session_id = client.get("/session/new").json()["id"]
+    client.post("/policy/new?session_id=" + session_id, json={"rule": "rule 1"})
+    response = client.put("/policy/1?session_id=" + session_id, json={"rule": "rule 2"})
+    assert response.status_code == 200
+    assert response.json()["rule"] == "rule 2" and response.json()["policy_id"] == 1
+
+def test_policy_delete():
+    session_id = client.get("/session/new").json()["id"]
+    response = client.post("/policy/new?session_id=" + session_id, json={"rule": "rule 1"})
+    assert response.status_code == 200
+    response = client.delete("/policy/1?session_id=" + session_id)
+    assert response.status_code == 200 and response.json() == {"ok": True}
+    response = client.get("/policy/1?session_id=" + session_id)
+    assert response.status_code == 404
