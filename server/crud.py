@@ -68,8 +68,8 @@ def delete_monitor(db: Session, session_id: str, monitor_id: int):
     db.delete(db_monitor)
     db.commit()
 
-def update_monitor(db: Session, session_id: str, monitor_id: int, trace: str):
-    db_trace = models.MonitorTrace(monitor_id=monitor_id, session_id=session_id, trace=trace)
+def add_monitor_trace(db: Session, session_id: str, monitor_id: int, trace: schemas.MonitorTraceCreate):
+    db_trace = models.MonitorTrace(monitor_id=monitor_id, session_id=session_id, trace=trace.trace)
     db.add(db_trace)
     db.commit()
     db.refresh(db_trace)
