@@ -7,28 +7,24 @@ from server.main import app
 from server.database import get_db
 from server.models import Base
 
+# --- Begin boilerplate code ---
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Create the database tables
 Base.metadata.create_all(bind=engine)
-
 def override_get_db():
     try:
         db = TestingSessionLocal()
         yield db
     finally:
         db.close()
-
 app.dependency_overrides[get_db] = override_get_db
-
 client = TestClient(app)
+# --- End boilerplate code ---
 
 def test_session_new():
     response = client.get("/session/new")
