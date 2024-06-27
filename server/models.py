@@ -29,7 +29,7 @@ class Monitor(Base):
     )
 
     policy = relationship("Policy", foreign_keys=[policy_id, session_id])
-    session = relationship("Session")
+    session = relationship("Session", viewonly=True)
     traces = relationship("MonitorTrace", back_populates="monitor")
 
 class MonitorTrace(Base):
