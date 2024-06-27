@@ -1,4 +1,4 @@
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, ConfigDict
 from typing import List, Dict
 
 class SessionBase(BaseModel):
@@ -12,10 +12,8 @@ class PolicyCreate(BaseModel):
     rule: str
 
 class Policy(PolicyBase):
+    model_config = ConfigDict(from_attributes=True)
     policy_id: int
-
-    class Config:
-        from_attributes = True
 
 class MonitorBase(BaseModel):
     policy_id: int
@@ -31,15 +29,11 @@ class MonitorTraceCreate(MonitorTraceBase):
     pass
 
 class MonitorTrace(MonitorTraceBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
-    class Config:
-        from_attributes = True
-
 class Monitor(MonitorBase):
+    model_config = ConfigDict(from_attributes=True)
     monitor_id: int
     policy_id: int
     traces: List[MonitorTrace] = []
-
-    class Config:
-        from_attributes = True
