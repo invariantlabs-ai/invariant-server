@@ -17,9 +17,9 @@ def get_next_policy_id(db: Session, session_id: str):
         return max_policy_id.policy_id + 1
     return 1
 
-def create_policy(db: Session, policy: schemas.PolicyCreate):
-    next_policy_id = get_next_policy_id(db, policy.session_id)
-    db_policy = models.Policy(policy_id=next_policy_id, **policy.dict())
+def create_policy(db: Session, session_id: str, policy: schemas.PolicyCreate):
+    next_policy_id = get_next_policy_id(db, session_id)
+    db_policy = models.Policy(policy_id=next_policy_id, session_id=session_id, rule=policy.rule)
     db.add(db_policy)
     db.commit()
     db.refresh(db_policy)
