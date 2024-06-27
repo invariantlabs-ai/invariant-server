@@ -11,7 +11,7 @@ def read_monitors(session_id: str, db: Session = Depends(database.get_db)):
 
 @router.post("/new", response_model=schemas.Monitor)
 def create_monitor(session_id: str, monitor: schemas.MonitorCreate, db: Session = Depends(database.get_db)):
-    return crud.create_monitor(db, monitor)
+    return crud.create_monitor(db, session_id, monitor.policy_id)
 
 @router.get("/{monitor_id}", response_model=schemas.Monitor)
 def read_monitor(session_id: str, monitor_id: int, db: Session = Depends(database.get_db)):

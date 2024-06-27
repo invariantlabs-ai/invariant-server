@@ -68,8 +68,15 @@ def delete_monitor(db: Session, session_id: str, monitor_id: int):
     db.delete(db_monitor)
     db.commit()
 
+def get_next_monitor_trace_id(db: Session, session_id: str, monitor_id: int):
+    max_monitor_trace_id = db.query(models.MonitorTrace).filter(models.MonitorTrace.session_id == session_id, models.MonitorTrace.monitor_id == monitor_id).order_by(models.MonitorTrace.id.desc()).first()
+    if max_monitor_trace_id:
+        return max_monitor_trace_id.id + 1
+    return 1
+
 def add_monitor_trace(db: Session, session_id: str, monitor_id: int, trace: schemas.MonitorTraceCreate):
-    db_trace = models.MonitorTrace(monitor_id=monitor_id, session_id=session_id, trace=trace.trace)
+    next_monitor_trace_id = get_next_monitor_trace_id(db, session_id, monitor_id)
+    db_trace = models.MonitorTrace(id=next_monitor_trace_id, monitor_id=monitor_id, session_id=session_id, trace=trace.trace)
     db.add(db_trace)
     db.commit()
     db.refresh(db_trace)
