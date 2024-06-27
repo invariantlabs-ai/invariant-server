@@ -1,3 +1,7 @@
-import ipc
+from fastapi import FastAPI
 
-ipc.hello()
+app = FastAPI()
+
+@app.get("/")
+def index():
+    return {"status": "ok"}

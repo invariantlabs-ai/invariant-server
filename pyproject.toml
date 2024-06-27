@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Invariant policy server"
 dependencies = [
     "fastapi>=0.111.0",
+    "uvicorn>=0.30.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"
