@@ -35,7 +35,7 @@ def test_policy_new():
     assert "policy_id" in response_json
     assert response_json["policy_id"] == 1
     # cleanup
-    response = client.delete("/session?session_id" + session_id)
+    response = client.delete("/session?session_id=" + session_id)
     assert response.status_code == 200
 
 def test_policy_view():
@@ -53,7 +53,7 @@ def test_policy_view():
     response_json = response.json()
     assert len(response_json) == 2 and response_json[0]["rule"] == "rule 1" and response_json[1]["rule"] == "rule 2" and response_json[0]["policy_id"] == 1 and response_json[1]["policy_id"] == 2
     # cleanup
-    response = client.delete("/session?session_id" + session_id)
+    response = client.delete("/session?session_id=" + session_id)
     assert response.status_code == 200
 
 def test_policy_update():
@@ -63,7 +63,7 @@ def test_policy_update():
     assert response.status_code == 200
     assert response.json()["rule"] == "rule 2" and response.json()["policy_id"] == 1
     # cleanup
-    response = client.delete("/session?session_id" + session_id)
+    response = client.delete("/session?session_id=" + session_id)
     assert response.status_code == 200
 
 def test_policy_delete():
@@ -75,7 +75,7 @@ def test_policy_delete():
     response = client.get("/policy/1?session_id=" + session_id)
     assert response.status_code == 404
     # cleanup
-    response = client.delete("/session?session_id" + session_id)
+    response = client.delete("/session?session_id=" + session_id)
     assert response.status_code == 200
 
 def test_policy_analyze():
@@ -105,5 +105,5 @@ raise "must not send emails to anyone but 'Peter' after seeing the inbox" if:
     response = client.post(f"/policy/{policy_id}/analyze?session_id={session_id}", json={"trace": trace})
     assert response.json() == {'errors': ["PolicyViolation(must not send emails to anyone but 'Peter' after seeing the inbox)"], 'handled_errors': []}
     # cleanup
-    response = client.delete("/session?session_id" + session_id)
+    response = client.delete("/session?session_id=" + session_id)
     assert response.status_code == 200

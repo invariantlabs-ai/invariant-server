@@ -33,5 +33,5 @@ def test_session_new():
     assert "id" in response_json
     id = uuid.UUID(response_json["id"])
     assert id.version == 4
-    response = client.delete("/session?session_id" + response_json["id"])
+    response = client.delete("/session?session_id=" + response_json["id"])
     assert response.status_code == 200
