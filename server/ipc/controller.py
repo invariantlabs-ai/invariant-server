@@ -36,8 +36,9 @@ class IpcController:
 
     def start_process(self, session_id):
         if settings.production:
-            raise NotImplementedError("Setup nsjail for production environment.")
-            process = subprocess.Popen([sys.executable, os.path.abspath(__file__ + '/../invariant-ipc.py')],
+            # This is only meant to be used in the production Docker container
+            process = subprocess.Popen(['nsjail', '-q', '-Mo', '-R', '/bin/', '-R', '/lib', '-R', '/lib64/', '-R', '/usr/', '-R', '/sbin/', '-T', '/dev', '-R', '/dev/urandom', '-R', '/app/.venv', 
+                            '-R', '/home/app', '-R', '/app/server/ipc/invariant-ipc.py', '--user', '99999', '--group', '99999', '--', '/app/.venv/bin/python3', '/app/server/ipc/invariant-ipc.py'],
                             stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE,
                             text=True)
