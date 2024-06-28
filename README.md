@@ -11,7 +11,9 @@ docker build -t invariant-server .
 docker run -e PRODUCTION=true --privileged -d -p8000:8000 invariant-server
 ```
 
-The `--privileged` flag is required to run each session policy in its own [nsjail](https://nsjail.dev/). Note that `PRODUCTION=true` requires the `--privileged` flag.
+The `--privileged` flag is required to run each session policy in its own [nsjail](https://nsjail.dev/). This is required to ensure isolation between multiple users running policies on the same server.
+
+Note that `PRODUCTION=true` requires the `--privileged` flag.
 
 The application can also be run in development mode by omitting the `PRODUCTION` environment variable:
 
