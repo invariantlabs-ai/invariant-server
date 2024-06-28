@@ -29,7 +29,8 @@ class IpcController:
         rpc_info["stdin"].write(message + "\n")
         rpc_info["stdin"].flush()
         result = rpc_info["stdout"].readline().strip()
-        result = json.loads(result)
+        if func_name != "terminate":
+            result = json.loads(result)
         return result
 
     def start_process(self, session_id):

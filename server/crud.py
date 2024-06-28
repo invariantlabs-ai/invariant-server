@@ -8,6 +8,11 @@ def create_session(db: Session):
     db.refresh(db_session)
     return db_session
 
+def delete_session(db: Session, session_id: str):
+    db_session = db.query(models.Session).filter(models.Session.id == session_id).first()
+    db.delete(db_session)
+    db.commit()
+
 def get_session(db: Session, session_id: str):
     return db.query(models.Session).filter(models.Session.id == session_id).first()
 
