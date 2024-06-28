@@ -4,7 +4,7 @@ from invariant import Policy, Monitor
 from typing import List, Dict
 
 session_id = ''
-monitors = {}
+monitors: Dict[id, Monitor] = {}
 
 def analyze(policy: str, traces: List[Dict]):
     policy = Policy.from_string(policy)
