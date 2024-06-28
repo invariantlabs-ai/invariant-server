@@ -60,7 +60,8 @@ def test_monitor_view():
 def test_monitor_delete():
     session_id = client.get("/session/new").json()["id"]
     policy_id = client.post("/policy/new?session_id=" + session_id, json={"rule": "rule 1"}).json()["policy_id"]
-    client.post("/monitor/new?session_id=" + session_id, json={"policy_id": policy_id})
+    response = client.post("/monitor/new?session_id=" + session_id, json={"policy_id": policy_id})
+    assert response.status_code == 200
     response = client.delete("/monitor/1?session_id=" + session_id)
     assert response.status_code == 200 and response.json() == {"ok": True}
     response = client.get("/monitor/1?session_id=" + session_id)
