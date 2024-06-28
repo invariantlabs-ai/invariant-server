@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from .. import crud, schemas, database, ipc
+from .. import crud, schemas, database
+from ..ipc.controller import IpcController
 import os
 
 router = APIRouter()
@@ -30,7 +31,8 @@ def analyze_policy(session_id: str, policy_id: int, analyze: schemas.PolicyAnaly
     if not policy:
         raise HTTPException(status_code=404, detail="Policy not found")
 
-    return ipc.analyze(policy.rule, analyze.trace)
+    ipc = IpcController()
+    return ipc.call_function(session_id, "analyze", policy.rule, analyze.trace)
 
 @router.get("/{policy_id}", response_model=schemas.Policy)
 def read_policy(session_id: str, policy_id: int, db: Session = Depends(database.get_db)):
