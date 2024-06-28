@@ -57,22 +57,6 @@ def test_monitor_view():
     response = client.delete("/session?session_id=" + session_id)
     assert response.status_code == 200
 
-def test_monitor_trace():
-    session_id = client.get("/session/new").json()["id"]
-    policy_id = client.post("/policy/new?session_id=" + session_id, json={"rule": "rule 1"}).json()["policy_id"]
-    client.post("/monitor/new?session_id=" + session_id, json={"policy_id": policy_id})
-    response = client.post("/monitor/1?session_id=" + session_id, json={"trace": [{"event": "event 1"}]})
-    assert response.status_code == 200
-    response = client.post("/monitor/1?session_id=" + session_id, json={"trace": [{"event": "event 2"}]})
-    assert response.status_code == 200
-    response = client.get("/monitor/1/traces?session_id=" + session_id)
-    assert response.status_code == 200
-    response_json = response.json()
-    assert response_json == [{"id": 1, "trace":[{"event": "event 1"}]}, {"id": 2, "trace":[{"event": "event 2"}]}]
-    # cleanup
-    response = client.delete("/session?session_id=" + session_id)
-    assert response.status_code == 200
-
 def test_monitor_delete():
     session_id = client.get("/session/new").json()["id"]
     policy_id = client.post("/policy/new?session_id=" + session_id, json={"rule": "rule 1"}).json()["policy_id"]

@@ -1,15 +1,17 @@
-from pydantic import BaseModel, ConfigDict
-from typing import List, Dict
+from pydantic import BaseModel, ConfigDict, model_validator, ValidationError
+from typing import List, Dict, Optional
 
 class SessionBase(BaseModel):
     id: str
 
 class PolicyBase(BaseModel):
     rule: str
+    name: str
     session_id: str
 
 class PolicyCreate(BaseModel):
     rule: str
+    name: Optional[str] = None
 
 class PolicyAnalyze(BaseModel):
     trace: List[Dict]
@@ -23,20 +25,22 @@ class MonitorBase(BaseModel):
     session_id: str
 
 class MonitorCreate(BaseModel):
-    policy_id: int
+    policy_id: Optional[int] = None
+    name: Optional[str] = None
+    rule: Optional[str] = None
 
-class MonitorTraceBase(BaseModel):
-    trace: List[Dict]
-
-class MonitorTraceCreate(MonitorTraceBase):
-    pass
-
-class MonitorTrace(MonitorTraceBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
+    @model_validator(mode='before')
+    @classmethod
+    def check_policy_id_or_rule(cls, values):
+        policy_id, rule = values.get('policy_id'), values.get('rule')
+        if (policy_id is None and rule is None):
+            raise ValueError('You must provide either policy_id or rule.')
+        if (policy_id is not None and rule is not None):
+            raise ValueError('You must provide either policy_id or rule, but not both.')
+        return values
 
 class Monitor(MonitorBase):
     model_config = ConfigDict(from_attributes=True)
     monitor_id: int
-    policy_id: int
-    traces: List[MonitorTrace] = []
+    rule: str
+    name: str

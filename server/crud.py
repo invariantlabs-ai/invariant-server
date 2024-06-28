@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
+from typing import Optional
 
 def create_session(db: Session):
     db_session = models.Session()
@@ -24,7 +25,9 @@ def get_next_policy_id(db: Session, session_id: str):
 
 def create_policy(db: Session, session_id: str, policy: schemas.PolicyCreate):
     next_policy_id = get_next_policy_id(db, session_id)
-    db_policy = models.Policy(policy_id=next_policy_id, session_id=session_id, rule=policy.rule)
+    if not policy.name:
+        policy.name = f"Policy #{next_policy_id}"
+    db_policy = models.Policy(policy_id=next_policy_id, session_id=session_id, rule=policy.rule, name=policy.name)
     db.add(db_policy)
     db.commit()
     db.refresh(db_policy)
@@ -54,9 +57,16 @@ def get_next_monitor_id(db: Session, session_id: str):
         return max_monitor_id.monitor_id + 1
     return 1
 
-def create_monitor(db: Session, session_id: str, policy_id: int):
+def create_monitor(db: Session, session_id: str, monitor: schemas.MonitorCreate):
     next_monitor_id = get_next_monitor_id(db, session_id)
-    db_monitor = models.Monitor(monitor_id=next_monitor_id, session_id=session_id, policy_id=policy_id)
+    if not monitor.rule:
+        policy = get_policy(db, session_id, monitor.policy_id)
+        rule = policy.rule
+    else:
+        rule = monitor.rule
+    if not monitor.name:
+        monitor.name = f"Monitor #{next_monitor_id}"
+    db_monitor = models.Monitor(monitor_id=next_monitor_id, session_id=session_id, rule = rule, name=monitor.name)
     db.add(db_monitor)
     db.commit()
     db.refresh(db_monitor)
@@ -72,20 +82,3 @@ def delete_monitor(db: Session, session_id: str, monitor_id: int):
     db_monitor = db.query(models.Monitor).filter(models.Monitor.session_id == session_id, models.Monitor.monitor_id == monitor_id).first()
     db.delete(db_monitor)
     db.commit()
-
-def get_next_monitor_trace_id(db: Session, session_id: str, monitor_id: int):
-    max_monitor_trace_id = db.query(models.MonitorTrace).filter(models.MonitorTrace.session_id == session_id, models.MonitorTrace.monitor_id == monitor_id).order_by(models.MonitorTrace.id.desc()).first()
-    if max_monitor_trace_id:
-        return max_monitor_trace_id.id + 1
-    return 1
-
-def add_monitor_trace(db: Session, session_id: str, monitor_id: int, trace: schemas.MonitorTraceCreate):
-    next_monitor_trace_id = get_next_monitor_trace_id(db, session_id, monitor_id)
-    db_trace = models.MonitorTrace(id=next_monitor_trace_id, monitor_id=monitor_id, session_id=session_id, trace=trace.trace)
-    db.add(db_trace)
-    db.commit()
-    db.refresh(db_trace)
-    return db_trace
-
-def get_monitor_traces(db: Session, session_id: str, monitor_id: int):
-    return db.query(models.MonitorTrace).filter(models.MonitorTrace.session_id == session_id, models.MonitorTrace.monitor_id == monitor_id).all()
