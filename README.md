@@ -1,6 +1,6 @@
 # invariant-server
 
-API Server to run Invariant policies remotely.
+REST API Server made to run Invariant policies remotely.
 
 ## Installation
 
