@@ -47,3 +47,10 @@ rye run uvicorn server.main:app --reload
 - **session** - A session is an instance that belongs to one or more users. It is used to store and run policies, and setup monitors for the policies. In production mode, all sessions are isolated between eachother, however policies within the same session share the same environment.
 - **policy** - An invariant policy, these can be used to store policies and you can use a specific policy to analyze traces.
 - **monitor** - Setups a monitor which will run a policy on traces that are incrementally sent to the server. The monitor will only return new errors that were not previously detected. The monitors can either be instantiated from a policy or direct from text.
+
+## Roadmap
+
+- [ ] Publish container on `ghcr.io`
+- [ ] Cleanup old sessions
+- [ ] Add logging
+- [ ] More fields in the db like timestamps
