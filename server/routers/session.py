@@ -11,7 +11,7 @@ def create_session(db: Session = Depends(database.get_db)):
     IpcController().start_process(session.id)
     return session
 
-@router.delete("/{session_id}")
+@router.delete("/")
 def delete_session(session_id: str, db: Session = Depends(database.get_db)):
     crud.delete_session(db, session_id)
     IpcController().stop_process(session_id)

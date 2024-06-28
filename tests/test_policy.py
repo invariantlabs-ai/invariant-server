@@ -34,6 +34,9 @@ def test_policy_new():
     assert response_json["rule"] == "hello world"
     assert "policy_id" in response_json
     assert response_json["policy_id"] == 1
+    # cleanup
+    response = client.delete("/session?session_id" + session_id)
+    assert response.status_code == 200
 
 def test_policy_view():
     session_id = client.get("/session/new").json()["id"]
@@ -49,6 +52,9 @@ def test_policy_view():
     assert response.status_code == 200
     response_json = response.json()
     assert len(response_json) == 2 and response_json[0]["rule"] == "rule 1" and response_json[1]["rule"] == "rule 2" and response_json[0]["policy_id"] == 1 and response_json[1]["policy_id"] == 2
+    # cleanup
+    response = client.delete("/session?session_id" + session_id)
+    assert response.status_code == 200
 
 def test_policy_update():
     session_id = client.get("/session/new").json()["id"]
@@ -56,6 +62,9 @@ def test_policy_update():
     response = client.put("/policy/1?session_id=" + session_id, json={"rule": "rule 2"})
     assert response.status_code == 200
     assert response.json()["rule"] == "rule 2" and response.json()["policy_id"] == 1
+    # cleanup
+    response = client.delete("/session?session_id" + session_id)
+    assert response.status_code == 200
 
 def test_policy_delete():
     session_id = client.get("/session/new").json()["id"]
@@ -65,6 +74,9 @@ def test_policy_delete():
     assert response.status_code == 200 and response.json() == {"ok": True}
     response = client.get("/policy/1?session_id=" + session_id)
     assert response.status_code == 404
+    # cleanup
+    response = client.delete("/session?session_id" + session_id)
+    assert response.status_code == 200
 
 def test_policy_analyze():
     rule= """
@@ -92,3 +104,6 @@ raise "must not send emails to anyone but 'Peter' after seeing the inbox" if:
     ]
     response = client.post(f"/policy/{policy_id}/analyze?session_id={session_id}", json={"trace": trace})
     assert response.json() == {'errors': ["PolicyViolation(must not send emails to anyone but 'Peter' after seeing the inbox)"], 'handled_errors': []}
+    # cleanup
+    response = client.delete("/session?session_id" + session_id)
+    assert response.status_code == 200
