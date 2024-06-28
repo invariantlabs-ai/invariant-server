@@ -19,7 +19,6 @@ COPY server ./server
 
 RUN chown -R app:app /app && chmod -R 750 /app
 
-ENV PRODUCTION=true
 EXPOSE 8000
 
 USER app
