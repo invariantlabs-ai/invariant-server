@@ -9,10 +9,32 @@ router = APIRouter()
 
 @router.get("/", response_model=List[schemas.Policy])
 def read_policies(session_id: str, db: Session = Depends(database.get_db)):
+    """
+    Retrieve a list of policies for a given session.
+
+    This endpoint fetches all policies associated with a specified session 
+    from the database.
+
+    Args:
+        session_id (str): The ID of the session.
+        db (Session): The database session dependency.
+
+    Returns:
+        List[schemas.Policy]: A list of policies.
+    """
     return crud.get_policies(db, session_id)
 
 @router.get("/templates")
 def get_policy_templates():
+    """
+    Retrieve policy templates.
+
+    This endpoint reads policy templates from the server's file system and 
+    returns them as a JSON structure.
+
+    Returns:
+        dict: A JSON structure representing policy templates.
+    """
     def build_json_structure(path):
         if os.path.isdir(path):
             return {item: build_json_structure(os.path.join(path, item)) for item in os.listdir(path)}
@@ -23,10 +45,38 @@ def get_policy_templates():
 
 @router.post("/new", response_model=schemas.Policy)
 def create_policy(session_id:str, policy: schemas.PolicyCreate, db: Session = Depends(database.get_db)):
+    """
+    Create a new policy for a given session.
+
+    This endpoint creates a new policy in the database for a specified session.
+
+    Args:
+        session_id (str): The ID of the session.
+        policy (schemas.PolicyCreate): The policy data.
+        db (Session): The database session dependency.
+
+    Returns:
+        schemas.Policy: The created policy.
+    """
     return crud.create_policy(db, session_id, policy)
 
 @router.post("/{policy_id}/analyze")
 def analyze_policy(session_id: str, policy_id: int, analyze: schemas.PolicyAnalyze, db: Session = Depends(database.get_db)):
+    """
+    Analyze a policy with a given trace.
+
+    This endpoint runs an analysis of a specified policy using provided trace 
+    data.
+
+    Args:
+        session_id (str): The ID of the session.
+        policy_id (int): The ID of the policy to analyze.
+        analyze (schemas.PolicyAnalyze): The analysis data.
+        db (Session): The database session dependency.
+
+    Returns:
+        Any: The result of the analysis.
+    """
     policy = crud.get_policy(db, session_id, policy_id)
     if not policy:
         raise HTTPException(status_code=404, detail="Policy not found")
@@ -36,6 +86,19 @@ def analyze_policy(session_id: str, policy_id: int, analyze: schemas.PolicyAnaly
 
 @router.get("/{policy_id}", response_model=schemas.Policy)
 def read_policy(session_id: str, policy_id: int, db: Session = Depends(database.get_db)):
+    """
+    Retrieve details of a specific policy.
+
+    This endpoint fetches the details of a specified policy from the database.
+
+    Args:
+        session_id (str): The ID of the session.
+        policy_id (int): The ID of the policy to retrieve.
+        db (Session): The database session dependency.
+
+    Returns:
+        schemas.Policy: The policy details.
+    """
     policy = crud.get_policy(db, session_id, policy_id)
     if not policy:
         raise HTTPException(status_code=404, detail="Policy not found")
@@ -44,6 +107,20 @@ def read_policy(session_id: str, policy_id: int, db: Session = Depends(database.
 
 @router.put("/{policy_id}", response_model=schemas.Policy)
 def update_policy(session_id: str, policy_id: int, policy_create: schemas.PolicyCreate, db: Session = Depends(database.get_db)):
+    """
+    Update an existing policy.
+
+    This endpoint updates the details of a specified policy in the database.
+
+    Args:
+        session_id (str): The ID of the session.
+        policy_id (int): The ID of the policy to update.
+        policy_create (schemas.PolicyCreate): The updated policy data.
+        db (Session): The database session dependency.
+
+    Returns:
+        schemas.Policy: The updated policy.
+    """
     policy = crud.get_policy(db, session_id, policy_id)
     if not policy:
         raise HTTPException(status_code=404, detail="Policy not found")
@@ -52,6 +129,19 @@ def update_policy(session_id: str, policy_id: int, policy_create: schemas.Policy
 
 @router.delete("/{policy_id}")
 def delete_policy(session_id: str, policy_id: int, db: Session = Depends(database.get_db)):
+    """
+    Delete a specific policy.
+
+    This endpoint deletes a specified policy from the database. Any monitors started from this policy will not be deleted.
+
+    Args:
+        session_id (str): The ID of the session.
+        policy_id (int): The ID of the policy to delete.
+        db (Session): The database session dependency.
+
+    Returns:
+        dict: A dictionary indicating the operation was successful.
+    """
     policy = crud.get_policy(db, session_id, policy_id)
     if not policy:
         raise HTTPException(status_code=404, detail="Policy not found")
