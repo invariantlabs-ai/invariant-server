@@ -3,6 +3,8 @@ import json
 from invariant import Policy
 from typing import List, Dict
 
+session_id = None
+
 def analyze(policy: str, traces: List[Dict]):
     policy = Policy.from_string(policy)
     analysis_result = policy.analyze(traces)
@@ -14,6 +16,7 @@ function_map = {
 }
 
 def main():
+    session_id = sys.argv[1]
     while True:
         try:
             line = sys.stdin.readline().strip()
