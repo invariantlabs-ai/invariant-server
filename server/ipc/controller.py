@@ -2,6 +2,7 @@ import subprocess
 import sys
 import json
 import os
+from ..config import settings
 
 class IpcController:
     _instance = None
@@ -34,10 +35,17 @@ class IpcController:
         return result
 
     def start_process(self, session_id):
-        process = subprocess.Popen([sys.executable, os.path.abspath(__file__ + '/../invariant-ipc.py')],
-                                   stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE,
-                                   text=True)
+        if settings.production:
+            raise NotImplementedError("Setup nsjail for production environment.")
+            process = subprocess.Popen([sys.executable, os.path.abspath(__file__ + '/../invariant-ipc.py')],
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE,
+                            text=True)
+        else:
+            process = subprocess.Popen([sys.executable, os.path.abspath(__file__ + '/../invariant-ipc.py')],
+                                       stdin=subprocess.PIPE,
+                                       stdout=subprocess.PIPE,
+                                       text=True)
         self.process_map[session_id] = process
         self.rpc_map[session_id] = {
             "stdin": process.stdin,
