@@ -5,7 +5,7 @@ from .models import Base
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(title='Invariant API', summary='API Server to run Invariant policies remotely.', version='0.1.0')
 
 @app.get("/")
 def index():
