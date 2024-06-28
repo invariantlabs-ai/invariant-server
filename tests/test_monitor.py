@@ -32,6 +32,9 @@ def test_monitor_new():
     assert response.status_code == 200
     response_json = response.json()
     assert "monitor_id" in response_json and response_json["monitor_id"] == 1 and "traces" in response_json and response_json["traces"] == []
+    # cleanup
+    response = client.delete("/session?session_id=" + session_id)
+    assert response.status_code == 200
 
 def test_monitor_view():
     session_id = client.get("/session/new").json()["id"]
@@ -50,6 +53,9 @@ def test_monitor_view():
     assert response.status_code == 200
     response_json = response.json()
     assert len(response_json) == 2 and response_json[0]["monitor_id"] == 1 and response_json[0]["traces"] == [] and response_json[1]["monitor_id"] == 2 and response_json[1]["traces"] == []
+    # cleanup
+    response = client.delete("/session?session_id=" + session_id)
+    assert response.status_code == 200
 
 def test_monitor_trace():
     session_id = client.get("/session/new").json()["id"]
@@ -63,6 +69,9 @@ def test_monitor_trace():
     assert response.status_code == 200
     response_json = response.json()
     assert response_json == [{"id": 1, "trace":[{"event": "event 1"}]}, {"id": 2, "trace":[{"event": "event 2"}]}]
+    # cleanup
+    response = client.delete("/session?session_id=" + session_id)
+    assert response.status_code == 200
 
 def test_monitor_delete():
     session_id = client.get("/session/new").json()["id"]
@@ -72,3 +81,6 @@ def test_monitor_delete():
     assert response.status_code == 200 and response.json() == {"ok": True}
     response = client.get("/monitor/1?session_id=" + session_id)
     assert response.status_code == 404
+    # cleanup
+    response = client.delete("/session?session_id=" + session_id)
+    assert response.status_code == 200
