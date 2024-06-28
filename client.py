@@ -29,4 +29,25 @@ policy_id = requests.post(server + "/policy/new?session_id=" + session_id, json=
 result = requests.post(f'{server}/policy/{policy_id}/analyze?session_id={session_id}', json={"trace": messages}).json()
 print(result)
 
+policy = """
+from invariant import Message, PolicyViolation
+
+raise PolicyViolation("Cannot send assistant message:", msg) if:
+    (msg: Message)
+    msg.role == "assistant"
+"""
+monitor_id = requests.post(server + "/monitor/new?session_id=" + session_id, json={"rule": policy}).json()["monitor_id"]
+input = [{"role": "user", "content": "Hello, world!"}]
+result = requests.post(f'{server}/monitor/{monitor_id}/check?session_id={session_id}', json={"trace": input}).json()
+print(result)
+input = [{"role": "assistant", "content": "Hello, user 1"}]
+result = requests.post(f'{server}/monitor/{monitor_id}/check?session_id={session_id}', json={"trace": input}).json()
+print(result)
+input = [{"role": "assistant", "content": "Hello, user 2"}]
+result = requests.post(f'{server}/monitor/{monitor_id}/check?session_id={session_id}', json={"trace": input}).json()
+print(result)
+input = [{"role": "user", "content": "Hello, world!"}]
+result = requests.post(f'{server}/monitor/{monitor_id}/check?session_id={session_id}', json={"trace": input}).json()
+print(result)
+
 requests.delete(server + "/session?session_id=" + session_id)

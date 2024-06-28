@@ -66,3 +66,14 @@ class IpcController:
             process = self.process_map.pop(session_id, None)
             if process:
                 process.terminate()
+
+class IpcControllerSingleton:
+    def __init__(self):
+        self.controller = None
+
+    def __call__(self):
+        if not self.controller:
+            self.controller = IpcController()
+        return self.controller
+
+get_ipc_controller = IpcControllerSingleton()

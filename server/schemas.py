@@ -23,6 +23,9 @@ class Policy(PolicyBase):
 class MonitorBase(BaseModel):
     session_id: str
 
+class MonitorCheck(BaseModel):
+    trace: List[Dict]
+
 class MonitorCreate(BaseModel):
     policy_id: Optional[int] = None
     name: Optional[str] = None

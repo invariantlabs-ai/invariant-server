@@ -69,3 +69,38 @@ def test_monitor_delete():
     # cleanup
     response = client.delete("/session?session_id=" + session_id)
     assert response.status_code == 200
+
+def test_monitor_check():
+    session_id = client.get("/session/new").json()["id"]
+    rule ="""
+from invariant import Message, PolicyViolation
+
+raise PolicyViolation("Cannot send assistant message:", msg) if:
+    (msg: Message)
+    msg.role == "assistant"
+"""
+    response = client.post("/monitor/new?session_id=" + session_id, json={"rule": rule})
+    assert response.status_code == 200
+    monitor_id = response.json()["monitor_id"]
+    monitor_id = 1
+
+    input = [{"role": "user", "content": "Hello, world!"}]
+
+    response = client.post("/monitor/" + str(monitor_id) + "/check?session_id=" + session_id, json={"trace": input}).json()
+    assert response == []
+
+    input = [{"role": "assistant", "content": "Hello, user 1"}]
+    response = client.post("/monitor/" + str(monitor_id) + "/check?session_id=" + session_id, json={"trace": input}).json()
+    assert response == ["PolicyViolation(Cannot send assistant message: {'role': 'assistant', 'content': 'Hello, user 1'})"]
+
+    input = [{"role": "assistant", "content": "Hello, user 2"}]
+    response = client.post("/monitor/" + str(monitor_id) + "/check?session_id=" + session_id, json={"trace": input}).json()
+    assert response == ["PolicyViolation(Cannot send assistant message: {'role': 'assistant', 'content': 'Hello, user 2'})"]
+
+    input = [{"role": "user", "content": "Hello, world!"}]
+    response = client.post("/monitor/" + str(monitor_id) + "/check?session_id=" + session_id, json={"trace": input}).json()
+    assert response == []
+
+    # cleanup
+    response = client.delete("/session?session_id=" + session_id)
+    assert response.status_code == 200

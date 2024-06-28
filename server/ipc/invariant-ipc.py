@@ -1,10 +1,10 @@
 import sys
 import json
 from invariant import Policy, Monitor
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 session_id = ''
-monitors: Dict[id, Monitor] = {}
+monitors: Dict[id, Tuple[Monitor, List[Dict]]] = {}
 
 def analyze(policy: str, traces: List[Dict]):
     policy = Policy.from_string(policy)
@@ -15,15 +15,17 @@ def monitor_check(monitor_id: int, traces: List[Dict]):
     global monitors
     if monitor_id not in monitors:
         return False
-    monitor = monitors[monitor_id]
-    return monitor.check(traces)
+    monitor, input = monitors[monitor_id]
+    input.extend(traces)
+    check_result = monitor.check(input)
+    return [repr(error) for error in check_result]
 
 def create_monitor(monitor_id: int, policy: str):
     global monitors
     if monitor_id in monitors:
         return False
         
-    monitors[monitor_id] = Monitor.from_string(policy)
+    monitors[monitor_id] = (Monitor.from_string(policy), [])
     return monitor_id
 
 def delete_monitor(monitor_id: int):
