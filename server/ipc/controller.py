@@ -65,11 +65,3 @@ class IpcController:
             process = self.process_map.pop(session_id, None)
             if process:
                 process.terminate()
-
-# Usage example
-if __name__ == "__main__":
-    ipc = IpcController()
-    ipc.start_process('session1')
-    result = ipc.call_function('session1', 'some_function', 1, 2, kwarg1='value')
-    print(result)
-    ipc.stop_process('session1')
