@@ -61,11 +61,15 @@ pip==24.1.1
 pydantic==2.7.4
     # via fastapi
     # via invariant
+    # via pydantic-settings
 pydantic-core==2.18.4
     # via pydantic
+pydantic-settings==2.3.4
+    # via invariant-server
 pygments==2.18.0
     # via rich
 python-dotenv==1.0.1
+    # via pydantic-settings
     # via uvicorn
 python-multipart==0.0.9
     # via fastapi

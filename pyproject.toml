@@ -7,6 +7,7 @@ dependencies = [
     "uvicorn>=0.30.1",
     "invariant @ git+https://github.com/invariantlabs-ai/invariant.git",
     "sqlalchemy>=2.0.31",
+    "pydantic-settings>=2.3.4",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"
