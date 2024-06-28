@@ -3,19 +3,24 @@ import json
 from invariant import Policy
 from typing import List, Dict
 
-session_id = None
+session_id = ''
 
 def analyze(policy: str, traces: List[Dict]):
     policy = Policy.from_string(policy)
     analysis_result = policy.analyze(traces)
     return {"errors": [repr(error) for error in analysis_result.errors], "handled_errors": [repr(handled_error) for handled_error in analysis_result.handled_errors]}
 
+def session():
+    return session_id
+
 # Map of function names to function objects
 function_map = {
     'analyze': analyze,
+    'session': session
 }
 
 def main():
+    global session_id
     session_id = sys.argv[1]
     while True:
         try:
