@@ -9,7 +9,7 @@ router = APIRouter()
 def read_monitors(session_id: str, db: Session = Depends(database.get_db)):
     return crud.get_monitors(db, session_id)
 
-@router.post("/new")
+@router.post("/new", response_model=schemas.Monitor)
 def create_monitor(session_id: str, monitor: schemas.MonitorCreate, db: Session = Depends(database.get_db)):
     return crud.create_monitor(db, session_id, monitor)
 

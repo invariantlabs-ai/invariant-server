@@ -21,7 +21,6 @@ class Policy(PolicyBase):
     policy_id: int
 
 class MonitorBase(BaseModel):
-    policy_id: int
     session_id: str
 
 class MonitorCreate(BaseModel):
