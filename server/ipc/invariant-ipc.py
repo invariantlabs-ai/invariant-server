@@ -1,14 +1,37 @@
 import sys
 import json
-from invariant import Policy
+from invariant import Policy, Monitor
 from typing import List, Dict
 
 session_id = ''
+monitors = {}
 
 def analyze(policy: str, traces: List[Dict]):
     policy = Policy.from_string(policy)
     analysis_result = policy.analyze(traces)
     return {"errors": [repr(error) for error in analysis_result.errors], "handled_errors": [repr(handled_error) for handled_error in analysis_result.handled_errors]}
+
+def monitor_check(monitor_id: int, traces: List[Dict]):
+    global monitors
+    if monitor_id not in monitors:
+        return False
+    monitor = monitors[monitor_id]
+    return monitor.check(traces)
+
+def create_monitor(monitor_id: int, policy: str):
+    global monitors
+    if monitor_id in monitors:
+        return False
+        
+    monitors[monitor_id] = Monitor.from_string(policy)
+    return monitor_id
+
+def delete_monitor(monitor_id: int):
+    global monitors
+    if monitor_id in monitors:
+        del monitors[monitor_id] # hopefully python GC will take care of the rest
+        return True
+    return False
 
 def session():
     return session_id
@@ -16,7 +39,10 @@ def session():
 # Map of function names to function objects
 function_map = {
     'analyze': analyze,
-    'session': session
+    'session': session,
+    'monitor_check': monitor_check,
+    'create_monitor': create_monitor,
+    'delete_monitor': delete_monitor,
 }
 
 def main():
@@ -34,7 +60,10 @@ def main():
             if func_name == "terminate":
                 break
             if func_name in function_map:
-                result = function_map[func_name](*args, **kwargs)
+                try:
+                    result = function_map[func_name](*args, **kwargs)
+                except Exception as e:
+                    result = f"Error: {e}"
             else:
                 result = f"Function {func_name} not found."
             result = json.dumps(result)
