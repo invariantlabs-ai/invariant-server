@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Dict
 from .. import crud, schemas, database
+from ..ipc.controller import IpcController
 
 router = APIRouter()
 
@@ -11,7 +12,9 @@ def read_monitors(session_id: str, db: Session = Depends(database.get_db)):
 
 @router.post("/new", response_model=schemas.Monitor)
 def create_monitor(session_id: str, monitor: schemas.MonitorCreate, db: Session = Depends(database.get_db)):
-    return crud.create_monitor(db, session_id, monitor)
+    monitor = crud.create_monitor(db, session_id, monitor)
+    IpcController().call_function(session_id, "create_monitor", monitor.monitor_id, monitor.rule)
+    return monitor
 
 @router.get("/{monitor_id}", response_model=schemas.Monitor)
 def read_monitor(session_id: str, monitor_id: int, db: Session = Depends(database.get_db)):
@@ -33,4 +36,5 @@ def delete_monitor(session_id: str, monitor_id: int, db: Session = Depends(datab
     if not monitor:
         raise HTTPException(status_code=404, detail="Monitor not found")
     crud.delete_monitor(db, session_id, monitor_id)
+    IpcController().call_function(session_id, "delete_monitor", monitor_id)
     return {"ok": True}
