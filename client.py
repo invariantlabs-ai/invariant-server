@@ -1,7 +1,7 @@
 import requests
 from typing import Optional
 
-class Invariant:
+class InvariantClient:
     def __init__(self, server_url: str, session_id: Optional[str] = None):
         self.server = server_url
         self.session_id = self._create_session()
@@ -53,7 +53,7 @@ class Invariant:
             return response.json()
 
 # Example usage
-invariant = Invariant('http://127.0.0.1:8000')
+invariant = InvariantClient('http://127.0.0.1:8000')
 
 # Define messages
 messages = [
