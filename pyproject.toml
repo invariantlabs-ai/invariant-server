@@ -11,14 +11,6 @@ dependencies = [
     ### Invariant extra dependencies
     "presidio-analyzer>=2.2.354",
     "spacy>=3.7.5",
-    "langchain>=0.2.1",
-    "langchain-openai>=0.1.7",
-    "langchainhub>=0.1.16",
-    "presidio-analyzer>=2.2.354",
-    "transformers>=4.41.1",
-    "torch>=2.3.0",
-    "codeshield>=1.0.1",
-    "python-dotenv>=1.0.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"
