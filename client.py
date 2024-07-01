@@ -1,14 +1,18 @@
 import requests
+from typing import Optional, str
 
 class Invariant:
-    def __init__(self, server_url):
+    def __init__(self, server_url: str, session_id: Optional[str] = None):
         self.server = server_url
         self.session_id = self._create_session()
         self.Policy = self._Policy(self)
         self.Monitor = self._Monitor(self)
     
-    def _create_session(self):
-        response = requests.get(f"{self.server}/session/new")
+    def _create_session(self, session_id: Optional[str] = None):
+        if session_id:
+            response = requests.get(f"{self.server}/session/new?session_id={session_id}")
+        else:
+            response = requests.get(f"{self.server}/session/new") 
         return response.json()["id"]
 
     def close_session(self):
