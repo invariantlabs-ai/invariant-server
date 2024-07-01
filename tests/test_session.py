@@ -35,3 +35,10 @@ def test_session_new():
     assert id.version == 4
     response = client.delete("/session?session_id=" + response_json["id"])
     assert response.status_code == 200
+
+def test_session_with_sid():
+    session_id = str(uuid.uuid4())
+    response = client.get("/session/new?session_id=" + session_id)
+    assert response.status_code == 200
+    response_json = response.json()
+    assert "id" in response_json and response_json["id"] == session_id
