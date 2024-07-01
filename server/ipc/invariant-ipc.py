@@ -14,7 +14,7 @@ def analyze(policy: str, traces: List[Dict]):
 def monitor_check(monitor_id: int, traces: List[Dict]):
     global monitors
     if monitor_id not in monitors:
-        return False
+        return "Invariant IPC Error: Monitor not found"
     monitor, input = monitors[monitor_id]
     input.extend(traces)
     check_result = monitor.check(input)
@@ -23,7 +23,7 @@ def monitor_check(monitor_id: int, traces: List[Dict]):
 def create_monitor(monitor_id: int, policy: str):
     global monitors
     if monitor_id in monitors:
-        return False
+        return "Invariant IPC Error: Monitor not found"
         
     monitors[monitor_id] = (Monitor.from_string(policy), [])
     return monitor_id
@@ -33,7 +33,7 @@ def delete_monitor(monitor_id: int):
     if monitor_id in monitors:
         del monitors[monitor_id] # hopefully python GC will take care of the rest
         return True
-    return False
+    return "Invariant IPC Error: Monitor not found."
 
 def session():
     return session_id
@@ -65,7 +65,7 @@ def main():
                 try:
                     result = function_map[func_name](*args, **kwargs)
                 except Exception as e:
-                    result = f"Error: {e}"
+                    result = f"Invariant IPC Error: {e}"
             else:
                 result = f"Function {func_name} not found."
             result = json.dumps(result)

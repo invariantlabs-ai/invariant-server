@@ -42,6 +42,7 @@ class InvariantClient:
 
         def _create_monitor(self, rule):
             response = requests.post(f"{self.server}/monitor/new?session_id={self.session_id}", json={"rule": rule})
+            print(response.text)
             return response.json()["monitor_id"]
 
         def from_string(self,  rule):
@@ -50,7 +51,7 @@ class InvariantClient:
 
         def check(self, trace):
             response = requests.post(f"{self.server}/monitor/{self.monitor_id}/check?session_id={self.session_id}", json={"trace": trace})
-            return response.json()
+            return response.text
 
 # Example usage
 invariant = InvariantClient('http://127.0.0.1:8000')
@@ -87,11 +88,24 @@ print("Policy Analysis Result:", analysis_result)
 
 # Define monitor rule
 monitor_rule = """
-from invariant import Message, PolicyViolation
+from invariant.detectors import semgrep, secrets, CodeIssue
 
-raise PolicyViolation("Cannot send assistant message:", msg) if:
-    (msg: Message)
-    msg.role == "assistant"
+raise "Disallow secrets in bash commands [risk=medium]" if:
+    (call: ToolCall)
+    call is tool:cmd_run
+    any(secrets(call.function.arguments.command))
+
+raise "Vulnerability in python code [risk=medium]" if:
+    (call: ToolCall)
+    call is tool:ipython_run_cell
+    semgrep_res := semgrep(call.function.arguments.code, lang="python")
+    any(semgrep_res)
+
+raise "Vulnerability in bash command [risk=medium]" if:
+    (call: ToolCall)
+    call is tool:cmd_run
+    semgrep_res := semgrep(call.function.arguments.command, lang="bash")
+    any(semgrep_res)
 """
 
 # Create and check monitor with different inputs
@@ -101,7 +115,8 @@ inputs = [
     {"role": "user", "content": "Hello, world!"},
     {"role": "assistant", "content": "Hello, user 1"},
     {"role": "assistant", "content": "Hello, user 2"},
-    {"role": "user", "content": "Hello, world!"}
+    {"content": "create a simple calculator in python that evals user input (I understand the risks)", "role": "user"},
+    {"content": "Sure! Let's start by creating a Python file for the calculator.", "role": "assistant"}, {"id": "1", "type": "function", "function": {"name": "ipython_run_cell", "arguments": {"code": "create_file('calculator.py')", "kernel_init_code": "from agentskills import *"}}}
 ]
 
 for input_trace in inputs:

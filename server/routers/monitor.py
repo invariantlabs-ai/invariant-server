@@ -41,8 +41,11 @@ def create_monitor(session_id: str, monitor: schemas.MonitorCreate, db: Session 
         schemas.Monitor: The created monitor.
     """
     monitor = crud.create_monitor(db, session_id, monitor)
-    ipc_controller.call_function(session_id, "create_monitor", monitor.monitor_id, monitor.rule)
-    return monitor
+    result = ipc_controller.call_function(session_id, "create_monitor", monitor.monitor_id, monitor.rule)
+    if result == monitor.monitor_id:
+        return monitor
+    
+    raise HTTPException(status_code=500, detail="Failed to create monitor: " + str(result))
 
 @router.get("/{monitor_id}", response_model=schemas.Monitor)
 def read_monitor(session_id: str, monitor_id: int, db: Session = Depends(database.get_db)):
