@@ -23,4 +23,6 @@ EXPOSE 8000
 
 USER app
 
-CMD ["/home/app/.rye/shims/rye", "run", "uvicorn", "server.main:app", "--host", "0.0.0.0"]
+ENV PATH="/home/app/.rye/shims:${PATH}"
+
+CMD ["rye", "run", "uvicorn", "server.main:app", "--host", "0.0.0.0"]
