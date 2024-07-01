@@ -42,3 +42,14 @@ def test_session_with_sid():
     assert response.status_code == 200
     response_json = response.json()
     assert "id" in response_json and response_json["id"] == session_id
+
+def test_session_with_same_sid():
+    session_id = str(uuid.uuid4())
+    response = client.get("/session/new?session_id=" + session_id)
+    assert response.status_code == 200
+    response_json = response.json()
+    assert "id" in response_json and response_json["id"] == session_id
+    response = client.get("/session/new?session_id=" + session_id)
+    assert response.status_code == 200
+    response_json = response.json()
+    assert "id" in response_json and response_json["id"] == session_id

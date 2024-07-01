@@ -24,6 +24,10 @@ def create_session(session_id: Optional[str] = Query(None, description="Optional
     """
     if session_id is None or not is_valid_uuid4(session_id):
         session_id = get_uuid4()
+
+    session = crud.get_session(db, session_id)
+    if session:
+        return session
   
     session = crud.create_session(db, session_id)
     ipc_controller.start_process(session.id)
