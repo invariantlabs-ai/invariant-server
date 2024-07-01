@@ -12,7 +12,7 @@ class Invariant:
         return response.json()["id"]
 
     def close_session(self):
-        requests.delete(f"{self.server}/session?session_id={self.session_id}")
+        requests.delete(f"{self.server}/session/?session_id={self.session_id}")
 
     class _Policy:
         def __init__(self, invariant):
