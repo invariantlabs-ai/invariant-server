@@ -27,9 +27,14 @@ class IpcController:
             "args": args,
             "kwargs": kwargs
         })
-        rpc_info["stdin"].write(message + "\n")
-        rpc_info["stdin"].flush()
-        result = rpc_info["stdout"].readline().strip()
+        try:
+            rpc_info["stdin"].write(message + "\n")
+            rpc_info["stdin"].flush()
+            result = rpc_info["stdout"].readline().strip()
+        except BrokenPipeError as e:
+            result = f"Invariant Controller IPC Error: {e}"
+            self.start_process(session_id)
+            return result
         try:
             result = json.loads(result)
         except json.JSONDecodeError as e:
