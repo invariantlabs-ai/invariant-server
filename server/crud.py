@@ -1,8 +1,7 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
-from typing import Optional
 
-def create_session(db: Session):
+def create_session(db: Session, session_id: str):
     """
     Create a new invariant session in the database.
 
@@ -13,6 +12,7 @@ def create_session(db: Session):
         models.Session: The created session object.
     """
     db_session = models.Session()
+    db_session.id = session_id
     db.add(db_session)
     db.commit()
     db.refresh(db_session)

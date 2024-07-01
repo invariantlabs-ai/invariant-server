@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from .. import crud, schemas, database
 from ..ipc.controller import IpcController, get_ipc_controller
+from typing import Optional
+from ..utils import is_valid_uuid4, get_uuid4
 
 router = APIRouter()
 
 @router.get("/new", response_model=schemas.SessionBase)
-def create_session(db: Session = Depends(database.get_db), ipc_controller: IpcController = Depends(get_ipc_controller)):
+def create_session(session_id: Optional[str] = Query(None, description="Optional session ID"), db: Session = Depends(database.get_db), ipc_controller: IpcController = Depends(get_ipc_controller)):
     """
     Create a new session and start the associated process.
 
@@ -20,7 +22,10 @@ def create_session(db: Session = Depends(database.get_db), ipc_controller: IpcCo
     Returns:
         schemas.SessionBase: The created session.
     """
-    session = crud.create_session(db)
+    if session_id is None or not is_valid_uuid4(session_id):
+        session_id = get_uuid4()
+  
+    session = crud.create_session(db, session_id)
     ipc_controller.start_process(session.id)
     return session
 
