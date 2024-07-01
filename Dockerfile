@@ -18,6 +18,7 @@ RUN /bin/bash -c 'source /home/app/.rye/env && rye sync'
 COPY server ./server
 
 RUN chown -R app:app /app && chmod -R 750 /app
+RUN chown -R app:app /home/app && chmod -R 750 /home/app
 
 EXPOSE 8000
 

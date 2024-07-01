@@ -30,8 +30,10 @@ class IpcController:
         rpc_info["stdin"].write(message + "\n")
         rpc_info["stdin"].flush()
         result = rpc_info["stdout"].readline().strip()
-        if func_name != "terminate":
+        try:
             result = json.loads(result)
+        except json.JSONDecodeError as e:
+            result = f"Invariant Controller IPC Error: {e} with result {result}"
         return result
 
     def start_process(self, session_id):
@@ -55,7 +57,7 @@ class IpcController:
 
     def call_function(self, session_id, func_name, *args, **kwargs):
         if session_id not in self.rpc_map:
-            raise ValueError(f"No process with session_id {session_id}")
+            self.start_process(session_id)
         return self._execute_function(session_id, func_name, *args, **kwargs)
 
     def stop_process(self, session_id):

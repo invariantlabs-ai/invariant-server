@@ -116,7 +116,8 @@ inputs = [
     {"role": "assistant", "content": "Hello, user 1"},
     {"role": "assistant", "content": "Hello, user 2"},
     {"content": "create a simple calculator in python that evals user input (I understand the risks)", "role": "user"},
-    {"content": "Sure! Let's start by creating a Python file for the calculator.", "role": "assistant"}, {"id": "1", "type": "function", "function": {"name": "ipython_run_cell", "arguments": {"code": "create_file('calculator.py')", "kernel_init_code": "from agentskills import *"}}}
+    {"content": "Sure! Let's start by creating a Python file for the calculator.", "role": "assistant"}, {"id": "1", "type": "function", "function": {"name": "ipython_run_cell", "arguments": {"code": "create_file('calculator.py')", "kernel_init_code": "from agentskills import *"}}},
+    {"content": "Sure! Let's start by creating the `calculator.py` file.", "role": "assistant"}, {"id": "1", "type":"function", "function": {"name": "ipython_run_cell", "arguments": {"code": "create_file('calculator.py')", "kernel_init_code": "from agentskills import *"}}}
 ]
 
 for input_trace in inputs:
