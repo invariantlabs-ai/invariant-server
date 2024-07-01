@@ -1,5 +1,5 @@
 import requests
-from typing import Optional, str
+from typing import Optional
 
 class Invariant:
     def __init__(self, server_url: str, session_id: Optional[str] = None):
