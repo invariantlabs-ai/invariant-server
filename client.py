@@ -5,10 +5,7 @@ from typing import Optional, List, Dict
 class InvariantClient:
     def __init__(self, server_url: str, session_id: Optional[str] = None):
         self.server = server_url
-        if session_id:
-            self.session_id = session_id
-        else:
-            self.session_id = self._create_session()
+        self.session_id = self._create_session(session_id)
         self.Policy = self._Policy(self)
         self.Monitor = self._Monitor(self)
 
@@ -141,7 +138,7 @@ events = [
         "function": {
             "name": "ipython_run_cell",
             "arguments": {
-                "code": "create_file('calculator.py')",
+                "code": "eval(input())",
                 "kernel_init_code": "from agentskills import *",
             },
         },
