@@ -7,12 +7,13 @@ import os
 
 router = APIRouter()
 
+
 @router.get("/", response_model=List[schemas.Policy])
 def read_policies(session_id: str, db: Session = Depends(database.get_db)):
     """
     Retrieve a list of policies for a given session.
 
-    This endpoint fetches all policies associated with a specified session 
+    This endpoint fetches all policies associated with a specified session
     from the database.
 
     Args:
@@ -24,27 +25,38 @@ def read_policies(session_id: str, db: Session = Depends(database.get_db)):
     """
     return crud.get_policies(db, session_id)
 
+
 @router.get("/templates")
 def get_policy_templates():
     """
     Retrieve policy templates.
 
-    This endpoint reads policy templates from the server's file system and 
+    This endpoint reads policy templates from the server's file system and
     returns them as a JSON structure.
 
     Returns:
         dict: A JSON structure representing policy templates.
     """
+
     def build_json_structure(path):
         if os.path.isdir(path):
-            return {item: build_json_structure(os.path.join(path, item)) for item in os.listdir(path)}
+            return {
+                item: build_json_structure(os.path.join(path, item))
+                for item in os.listdir(path)
+            }
         else:
-            with open(path, 'r', encoding='utf-8') as file:
+            with open(path, "r", encoding="utf-8") as file:
                 return file.read()
+
     return build_json_structure("server/templates")
 
+
 @router.post("/new", response_model=schemas.Policy)
-def create_policy(session_id:str, policy: schemas.PolicyCreate, db: Session = Depends(database.get_db)):
+def create_policy(
+    session_id: str,
+    policy: schemas.PolicyCreate,
+    db: Session = Depends(database.get_db),
+):
     """
     Create a new policy for a given session.
 
@@ -60,12 +72,18 @@ def create_policy(session_id:str, policy: schemas.PolicyCreate, db: Session = De
     """
     return crud.create_policy(db, session_id, policy)
 
+
 @router.post("/{policy_id}/analyze")
-def analyze_policy(session_id: str, policy_id: int, analyze: schemas.PolicyAnalyze, db: Session = Depends(database.get_db)):
+def analyze_policy(
+    session_id: str,
+    policy_id: int,
+    analyze: schemas.PolicyAnalyze,
+    db: Session = Depends(database.get_db),
+):
     """
     Analyze a policy with a given trace.
 
-    This endpoint runs an analysis of a specified policy using provided trace 
+    This endpoint runs an analysis of a specified policy using provided trace
     data.
 
     Args:
@@ -84,8 +102,11 @@ def analyze_policy(session_id: str, policy_id: int, analyze: schemas.PolicyAnaly
     ipc = IpcController()
     return ipc.call_function(session_id, "analyze", policy.rule, analyze.trace)
 
+
 @router.get("/{policy_id}", response_model=schemas.Policy)
-def read_policy(session_id: str, policy_id: int, db: Session = Depends(database.get_db)):
+def read_policy(
+    session_id: str, policy_id: int, db: Session = Depends(database.get_db)
+):
     """
     Retrieve details of a specific policy.
 
@@ -105,8 +126,14 @@ def read_policy(session_id: str, policy_id: int, db: Session = Depends(database.
 
     return crud.get_policy(db, session_id, policy_id)
 
+
 @router.put("/{policy_id}", response_model=schemas.Policy)
-def update_policy(session_id: str, policy_id: int, policy_create: schemas.PolicyCreate, db: Session = Depends(database.get_db)):
+def update_policy(
+    session_id: str,
+    policy_id: int,
+    policy_create: schemas.PolicyCreate,
+    db: Session = Depends(database.get_db),
+):
     """
     Update an existing policy.
 
@@ -127,8 +154,11 @@ def update_policy(session_id: str, policy_id: int, policy_create: schemas.Policy
 
     return crud.update_policy(db, session_id, policy_id, policy_create)
 
+
 @router.delete("/{policy_id}")
-def delete_policy(session_id: str, policy_id: int, db: Session = Depends(database.get_db)):
+def delete_policy(
+    session_id: str, policy_id: int, db: Session = Depends(database.get_db)
+):
     """
     Delete a specific policy.
 

@@ -32,7 +32,7 @@ catalogue==2.0.10
     # via spacy
     # via srsly
     # via thinc
-certifi==2024.6.2
+certifi==2024.7.4
     # via httpcore
     # via httpx
     # via requests
@@ -89,12 +89,12 @@ idna==3.7
     # via httpx
     # via requests
     # via tldextract
-invariant @ git+https://github.com/invariantlabs-ai/invariant.git@54b4afbb3627b28c7fe3404c77ecb72adf431077
+invariant @ git+https://github.com/invariantlabs-ai/invariant.git@2ac34d5620eab5c68380d85d912b2010e92aa634
     # via invariant-server
 jinja2==3.1.4
     # via fastapi
     # via spacy
-jsonschema==4.22.0
+jsonschema==4.23.0
     # via semgrep
 jsonschema-specifications==2023.12.1
     # via jsonschema
@@ -120,25 +120,25 @@ numpy==1.26.4
     # via blis
     # via spacy
     # via thinc
-orjson==3.10.5
+orjson==3.10.6
     # via fastapi
 packaging==24.1
     # via semgrep
     # via spacy
     # via thinc
     # via weasel
-peewee==3.17.5
+peewee==3.17.6
     # via semgrep
-phonenumbers==8.13.39
+phonenumbers==8.13.40
     # via presidio-analyzer
-pip==24.1.1
+pip==24.1.2
     # via invariant
 preshed==3.0.9
     # via spacy
     # via thinc
 presidio-analyzer==2.2.354
     # via invariant-server
-pydantic==2.7.4
+pydantic==2.8.2
     # via confection
     # via fastapi
     # via invariant
@@ -146,7 +146,7 @@ pydantic==2.7.4
     # via spacy
     # via thinc
     # via weasel
-pydantic-core==2.18.4
+pydantic-core==2.20.1
     # via pydantic
 pydantic-settings==2.3.4
     # via invariant-server
@@ -176,16 +176,16 @@ requests-file==2.1.0
 rich==13.7.1
     # via semgrep
     # via typer
-rpds-py==0.18.1
+rpds-py==0.19.0
     # via jsonschema
     # via referencing
 ruamel-yaml==0.17.40
     # via semgrep
 ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
-semgrep==1.78.0
+semgrep==1.79.0
     # via invariant
-setuptools==70.1.1
+setuptools==70.3.0
     # via marisa-trie
     # via spacy
     # via thinc
