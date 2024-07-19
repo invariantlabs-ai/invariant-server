@@ -26,29 +26,20 @@ def read_policies(session_id: str, db: Session = Depends(database.get_db)):
     return crud.get_policies(db, session_id)
 
 
-@router.get("/templates")
-def get_policy_templates():
+@router.get("/template")
+def get_policy_template(agent: str):
     """
-    Retrieve policy templates.
-
-    This endpoint reads policy templates from the server's file system and
-    returns them as a JSON structure.
+    Retrieve policy template for a specific agent.
 
     Returns:
-        dict: A JSON structure representing policy templates.
+        str: An Invariant Policy Language template
     """
 
-    def build_json_structure(path):
-        if os.path.isdir(path):
-            return {
-                item: build_json_structure(os.path.join(path, item))
-                for item in os.listdir(path)
-            }
-        else:
-            with open(path, "r", encoding="utf-8") as file:
-                return file.read()
+    if agent.lower() == "opendevin":
+        return "OpenDevin"
 
-    return build_json_structure("server/templates")
+    # return general policy
+    return "TODO"
 
 
 @router.post("/new", response_model=schemas.Policy)
