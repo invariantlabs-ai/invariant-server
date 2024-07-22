@@ -27,7 +27,7 @@ def read_policies(session_id: str, db: Session = Depends(database.get_db)):
 
 
 @router.get("/template")
-def get_policy_template(agent: str):
+def get_policy_template():
     """
     Retrieve policy template for a specific agent.
 
@@ -35,11 +35,8 @@ def get_policy_template(agent: str):
         str: An Invariant Policy Language template
     """
 
-    if agent.lower() == "opendevin":
-        return "OpenDevin"
-
     # return general policy
-    return "TODO"
+    return "TODO: change this"
 
 
 @router.post("/new", response_model=schemas.Policy)
