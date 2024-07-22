@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from typing import List
 from .. import crud, schemas, database
 from ..ipc.controller import IpcController
-import os
 
 router = APIRouter()
 
