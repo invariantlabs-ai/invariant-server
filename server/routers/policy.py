@@ -39,18 +39,18 @@ def get_policy_template():
 
 raise "Disallow secrets in bash commands [risk=medium]" if:
     (call: ToolCall)
-    call is tool:cmd_run
+    call is tool:run
     any(secrets(call.function.arguments.command))
 
 raise "Vulnerability in python code [risk=medium]" if:
     (call: ToolCall)
-    call is tool:ipython_run_cell
+    call is tool:run_ipython
     semgrep_res := semgrep(call.function.arguments.code, lang="python")
     any(semgrep_res)
 
 raise "Vulnerability in bash command [risk=medium]" if:
     (call: ToolCall)
-    call is tool:cmd_run
+    call is tool:run
     semgrep_res := semgrep(call.function.arguments.command, lang="bash")
     any(semgrep_res)
 """
