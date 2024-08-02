@@ -44,12 +44,8 @@ class IpcController:
             process = subprocess.Popen(
                 [
                     "nsjail",
-                    "--config",
+                    "-C",
                     "/home/app/server/nsjail.cfg",
-                    "--user",
-                    "99999",
-                    "--group",
-                    "99999",
                     "--",
                     "/home/app/.venv/bin/python3",
                     "/home/app/server/ipc/invariant-ipc.py",
