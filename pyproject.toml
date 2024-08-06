@@ -11,6 +11,8 @@ dependencies = [
     ### Invariant extra dependencies
     "presidio-analyzer>=2.2.354",
     "spacy>=3.7.5",
+    "fastapi-utils>=0.7.0",
+    "typing-inspect>=0.9.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"

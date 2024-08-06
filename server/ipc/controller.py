@@ -3,6 +3,7 @@ import sys
 import json
 import os
 from server.config import settings
+import time
 
 
 class IpcController:
@@ -25,6 +26,7 @@ class IpcController:
         rpc_info = self.rpc_map[session_id]
         message = json.dumps({"func_name": func_name, "args": args, "kwargs": kwargs})
         try:
+            rpc_info["timestamp"] = time.time()
             rpc_info["stdin"].write(message + "\n")
             rpc_info["stdin"].flush()
             result = rpc_info["stdout"].readline().strip()
@@ -67,7 +69,11 @@ class IpcController:
                 text=True,
             )
         self.process_map[session_id] = process
-        self.rpc_map[session_id] = {"stdin": process.stdin, "stdout": process.stdout}
+        self.rpc_map[session_id] = {
+            "stdin": process.stdin,
+            "stdout": process.stdout,
+            "timestamp": time.time(),
+        }
 
     def call_function(self, session_id, func_name, *args, **kwargs):
         if session_id not in self.rpc_map:
@@ -80,8 +86,18 @@ class IpcController:
             self.rpc_map[session_id]["stdin"].close()
             self.rpc_map[session_id]["stdout"].close()
             process = self.process_map.pop(session_id, None)
+            del self.rpc_map[session_id]
             if process:
                 process.terminate()
+
+    def cleanup(self):
+        for session_id in list(self.rpc_map.keys()):
+            if (
+                session_id in self.rpc_map
+                and time.time() - self.rpc_map[session_id]["timestamp"]
+                > settings.idle_timeout
+            ):
+                self.stop_process(session_id)
 
 
 class IpcControllerSingleton:
