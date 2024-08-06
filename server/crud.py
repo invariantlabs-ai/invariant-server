@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from . import models, schemas
+from server import models, schemas
 
 
 def create_session(db: Session, session_id: str):

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from .. import crud, schemas, database
-from ..ipc.controller import IpcController, get_ipc_controller
+from server import crud, schemas, database
+from server.ipc.controller import IpcController, get_ipc_controller
+from server.utils import is_valid_uuid4, get_uuid4
 from typing import Optional
-from ..utils import is_valid_uuid4, get_uuid4
 
 router = APIRouter()
 

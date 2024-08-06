@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-from .routers import session, policy, monitor
-from .database import engine
-from .models import Base
+from server.routers import session, policy, monitor
+from server.database import engine
+from server.models import Base
 
 Base.metadata.create_all(bind=engine)
 

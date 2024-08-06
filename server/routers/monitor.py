@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from .. import crud, schemas, database
-from ..ipc.controller import get_ipc_controller, IpcController
+from server import crud, database, schemas
+from server.ipc.controller import get_ipc_controller, IpcController
 
 router = APIRouter()
 
