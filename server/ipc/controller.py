@@ -2,7 +2,7 @@ import subprocess
 import sys
 import json
 import os
-from ..config import settings
+from server.config import settings
 
 
 class IpcController:
