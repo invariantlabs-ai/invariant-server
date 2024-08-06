@@ -30,6 +30,7 @@ class IpcController:
             rpc_info["stdin"].write(message + "\n")
             rpc_info["stdin"].flush()
             result = rpc_info["stdout"].readline().strip()
+            rpc_info["timestamp"] = time.time()
         except BrokenPipeError as e:
             result = f"Invariant Controller IPC Error: {e}"
             self.start_process(session_id)
