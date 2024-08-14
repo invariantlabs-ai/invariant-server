@@ -1,9 +1,10 @@
-from fastapi import Depends, FastAPI
-from server.ipc.controller import IpcController, get_ipc_controller
+from fastapi import FastAPI
+from server.ipc.controller import get_ipc_controller
 from server.routers import session, policy, monitor
 from server.database import engine
 from server.models import Base
 from fastapi_utils.tasks import repeat_every
+from fastapi.staticfiles import StaticFiles
 
 Base.metadata.create_all(bind=engine)
 
@@ -22,6 +23,8 @@ def index():
 app.include_router(session.router, prefix="/session", tags=["session"])
 app.include_router(policy.router, prefix="/policy", tags=["policy"])
 app.include_router(monitor.router, prefix="/monitor", tags=["monitor"])
+
+app.mount("/", StaticFiles(directory="playground/dist/"), name="assets")
 
 
 @app.on_event("startup")
