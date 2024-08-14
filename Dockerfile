@@ -1,3 +1,13 @@
+FROM node:20 as frontend-builder
+
+WORKDIR /app
+
+COPY ./playground/package*.json ./
+RUN npm install
+
+COPY ./playground/ ./
+RUN npm run build
+
 FROM gcr.io/kctf-docker/challenge
 
 RUN useradd --create-home --shell /bin/bash app
@@ -17,6 +27,7 @@ COPY --chown=app README.md ./
 RUN /bin/bash -c 'source /home/app/.rye/env && rye sync'
 
 COPY server ./server
+COPY --from=frontend-builder /app/dist ./playground/dist
 
 EXPOSE 8000
 
