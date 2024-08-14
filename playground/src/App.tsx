@@ -26,6 +26,7 @@ const App = () => {
       setPolicyCode(examples[0].policy);
       setInputData(examples[0].input);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const createNewSession = async () => {
@@ -84,7 +85,7 @@ const App = () => {
     try {
       const parsedJson = JSON.parse(jsonString);
       return JSON.stringify(parsedJson, null, 2); // 2-space indentation
-    } catch (error) {
+    } catch {
       return jsonString; // If it's not valid JSON, return the original string
     }
   };
