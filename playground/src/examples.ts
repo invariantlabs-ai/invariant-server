@@ -4,11 +4,13 @@ export interface Example {
   name: string;
   policy: string;
   input: string;
+  description?: string;
 }
 
 export const examples: Example[] = [
   {
     name: "Email",
+    description: "Raise an error if an email is sent to anyone other than 'Peter' after seeing the inbox.",
     policy: `raise "must not send emails to anyone but 'Peter' after seeing the inbox" if:
     (call: ToolCall) -> (call2: ToolCall)
     call is tool:get_inbox
@@ -28,6 +30,7 @@ export const examples: Example[] = [
   },
   {
     name: "Code",
+    description: "Use semgrep to detect vulnerabilities in Python and Bash code.",
     policy: `from invariant.detectors import semgrep, secrets, CodeIssue
 
 raise "Vulnerability in python code [risk=medium]" if:

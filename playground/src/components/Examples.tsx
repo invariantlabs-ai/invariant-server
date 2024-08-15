@@ -7,7 +7,8 @@ interface Example {
   name: string;
   policy: string;
   input: string;
-}
+  description?: string; // Add an optional description field
+} 
 
 interface ExamplesProps {
   examples: Example[];
@@ -34,8 +35,11 @@ const Examples: React.FC<ExamplesProps> = ({ examples, onSelect }) => {
           <CommandInput placeholder="Search examples..." />
           <CommandList>
             {examples.map((example, index) => (
-              <CommandItem key={index} onSelect={() => handleSelect(index)}>
-                {example.name}
+              <CommandItem key={index} onSelect={() => handleSelect(index)} className="flex flex-col items-start">
+                <span>{example.name}</span>
+                {example.description && (
+                  <span className="text-xs text-gray-500">{example.description}</span>
+                )}
               </CommandItem>
             ))}
           </CommandList>
