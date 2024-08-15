@@ -14,17 +14,11 @@ app = FastAPI(
     version="0.1.0",
 )
 
-
-@app.get("/")
-def index():
-    return {"ok": True}
-
-
 app.include_router(session.router, prefix="/session", tags=["session"])
 app.include_router(policy.router, prefix="/policy", tags=["policy"])
 app.include_router(monitor.router, prefix="/monitor", tags=["monitor"])
 
-app.mount("/", StaticFiles(directory="playground/dist/"), name="assets")
+app.mount("/", StaticFiles(directory="playground/dist/", html=True), name="assets")
 
 
 @app.on_event("startup")
