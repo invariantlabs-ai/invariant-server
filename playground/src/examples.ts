@@ -193,6 +193,10 @@ raise PolicyViolation("found secrets", msg) if:
         { role: "assistant", content: "My token is AKIAIOSFODNN7EXAMPLE" },
         { role: "assistant", content: "My token is AccountKey=lJzRc1YdHaAA2KCNJJ1tkYwF/+mKK6Ygw0NGe170Xu592euJv2wYUtBlV8z+qnlcNQSnIYVTkLWntUO1F8j8rQ==" },
         { role: "assistant", content: "My token is xoxb-123456789012-1234567890123-1234567890123-1234567890123" },
+        { role: "assistant", content: "My invalid token is ghp_wWPw5k4aXcaT4fcnZwJUVFk6LO0pINUx" },
+        { role: "assistant", content: "My invalid token is AKSAIOSFODNN7EXAMPLE" },
+        { role: "assistant", content: "My invalid token is AxccountKey=lJzRc1YdHaAA2KCNJJ1tkYwF/+mKK6Ygw0NGe170Xu592euJv2wYUtBlV8z+qnlcNQSnIYVTkLWntUO1F8j8rQ==" },
+        { role: "assistant", content: "My invalid token is abde-123456789012-1234567890123-1234567890123-1234567890123" },
       ],
       null,
       2
