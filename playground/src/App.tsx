@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/components/ui/use-toast";
 import Editor from "@monaco-editor/react";
 import InvariantLogoIcon from "@/assets/logo";
 import Examples from "@/components/Examples";
@@ -7,10 +9,36 @@ import examples from "@/examples";
 
 const App = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || "");
-  const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || "");
+  const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[0].policy);
+  const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || examples[0].input);
   const [output, setOutput] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const { toast } = useToast();
+
+  const isDigit = (str: string) => {
+    return /^\d+$/.test(str);
+  };
+
+  const handleHashChange = () => {
+    const hash = window.location.hash.substring(1); // Get hash value without the '#'
+    if (isDigit(hash)) {
+      handleExampleSelect(parseInt(hash, 10)); // Convert to int and call handleExampleSelect
+    } else if (hash) {
+      try {
+        const decodedData = JSON.parse(atob(hash));
+        if (decodedData.policy && decodedData.input) {
+          setPolicyCode(decodedData.policy);
+          setInputData(decodedData.input);
+          localStorage.setItem("policy", decodedData.policy);
+          localStorage.setItem("input", decodedData.input);
+        }
+      } catch (error) {
+        console.error("Failed to decode or apply hash data:", error);
+      }
+    }
+    window.location.hash = '';
+    history.replaceState(null, '', ' ');
+  };
 
   useEffect(() => {
     const checkSessionValidity = async (sessionId: string) => {
@@ -34,11 +62,18 @@ const App = () => {
       createNewSession();
     }
 
-    // Populate with first example if both policy and input are empty
-    if (!policyCode && !inputData) {
-      setPolicyCode(examples[0].policy);
-      setInputData(examples[0].input);
-    }
+    // Call the handler immediately in case there's an initial hash
+    handleHashChange();
+
+    // Add the event listener for hash changes
+    window.addEventListener("hashchange", handleHashChange);
+
+    console.log('i fire once');
+
+    // Clean up the event listener on component unmount
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -116,11 +151,30 @@ const App = () => {
   };
 
   const handleExampleSelect = (exampleIndex: number) => {
+    if (exampleIndex < 0 || exampleIndex >= examples.length) return;
+  
     const selectedExample = examples[exampleIndex];
     setPolicyCode(selectedExample.policy);
     setInputData(selectedExample.input);
     localStorage.setItem("policy", selectedExample.policy);
     localStorage.setItem("input", selectedExample.input);
+  };
+
+  const handleShare = () => {
+    const data = JSON.stringify({ policy: policyCode, input: inputData });
+    const encodedData = btoa(data);
+    const shareUrl = `${window.location.origin}${window.location.pathname}#${encodedData}`;
+    
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      toast({
+        description: "URL copied to clipboard!",
+      });
+    }).catch((error) => {
+      toast({
+        title: "Uh oh! Something went wrong.",
+        description: error.message,
+      })
+    });
   };
 
   return (
@@ -132,6 +186,12 @@ const App = () => {
           <Examples examples={examples} onSelect={handleExampleSelect} />
         </div>
         <div className="flex items-center space-x-4">
+         <button
+            onClick={handleShare}
+            className="bg-background hover:bg-gray-100 px-4 py-2 rounded border text-black"
+          >
+            Share
+          </button>
           <button
             onClick={handleEvaluate}
             className={`bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 ${
@@ -215,6 +275,8 @@ const App = () => {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+
+      <Toaster />
     </div>
   );
 };
