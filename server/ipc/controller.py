@@ -34,7 +34,7 @@ class IpcController:
         except BrokenPipeError as e:
             result = f"Invariant Controller IPC Error: {e}"
             self.start_process(session_id)
-            return result
+            return self._execute_function(session_id, func_name, *args, **kwargs)
         try:
             result = json.loads(result)
         except json.JSONDecodeError as e:
