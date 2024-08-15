@@ -13,10 +13,23 @@ const App = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
+    const checkSessionValidity = async (sessionId: string) => {
+      try {
+        const response = await fetch(`/session/?session_id=${sessionId}`);
+        if (response.status === 200) {
+          setSessionId(sessionId);
+        } else {
+          createNewSession();
+        }
+      } catch (error) {
+        console.error("Failed to validate session:", error);
+        createNewSession();
+      }
+    };
     // Initialize session ID
     const storedSessionId = localStorage.getItem("session_id");
     if (storedSessionId && /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i.test(storedSessionId)) {
-      setSessionId(storedSessionId);
+      checkSessionValidity(storedSessionId);
     } else {
       createNewSession();
     }
@@ -112,9 +125,9 @@ const App = () => {
         <div className="flex items-center space-x-2">
           <InvariantLogoIcon />
           <h1 className="text-lg">Invariant Playground</h1>
+          <Examples examples={examples} onSelect={handleExampleSelect} />
         </div>
         <div className="flex items-center space-x-4">
-          <Examples examples={examples} onSelect={handleExampleSelect} />
           <button
             onClick={handleEvaluate}
             className={`bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 ${

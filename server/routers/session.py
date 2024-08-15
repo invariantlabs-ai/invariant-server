@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from server import crud, schemas, database
 from server.ipc.controller import IpcController, get_ipc_controller
@@ -64,7 +64,7 @@ def delete_session(
     return {"ok": True}
 
 
-@router.get("/", response_model=schemas.SessionBase)
+@router.get("/")
 def read_session(session_id: str, db: Session = Depends(database.get_db)):
     """
     Retrieve details of an existing session.
@@ -79,4 +79,7 @@ def read_session(session_id: str, db: Session = Depends(database.get_db)):
     Returns:
         schemas.SessionBase: The session details.
     """
-    return crud.get_session(db, session_id)
+    session = crud.get_session(db, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session
