@@ -13,6 +13,8 @@ FROM gcr.io/kctf-docker/challenge
 RUN useradd --create-home --shell /bin/bash app
 RUN apt-get -y update && apt-get install -y git curl
 
+RUN chmod u+s /usr/bin/nsjail
+
 # install rye
 RUN curl -sSf https://rye.astral.sh/get | RYE_HOME="/home/app/.rye" RYE_INSTALL_OPTION="--yes" RYE_TOOLCHAIN_VERSION="3.12.3" bash
 
