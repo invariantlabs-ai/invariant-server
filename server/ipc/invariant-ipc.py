@@ -1,5 +1,6 @@
 import sys
 import json
+import os
 from invariant import Policy, Monitor
 from typing import List, Dict, Optional
 
@@ -69,6 +70,10 @@ function_map = {
 def main():
     global session_id
     session_id = sys.argv[1]
+    f = open(os.devnull, 'w')
+    new_stdout = os.dup(sys.stdout.fileno())
+    os.close(sys.stdout.fileno())
+    sys.stdout = f
     while True:
         try:
             line = sys.stdin.readline().strip()
@@ -91,13 +96,11 @@ def main():
             else:
                 result = f"Function {func_name} not found."
             result = json.dumps(result)
-            sys.stdout.write(result + "\n")
-            sys.stdout.flush()
+            os.write(new_stdout, (result + "\n").encode())
         except EOFError:
             break
         except Exception as e:
-            sys.stdout.write(f"Error: {e}\n")
-            sys.stdout.flush()
+            os.write(new_stdout, f"Error: {e}\n".encode())
 
 
 if __name__ == "__main__":
