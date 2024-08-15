@@ -26,6 +26,9 @@ COPY --chown=app README.md ./
 
 RUN /bin/bash -c 'source /home/app/.rye/env && rye sync'
 
+# Cache presidio-analyzer
+RUN rye run python3 -c 'import presidio_analyzer; a = presidio_analyzer.AnalyzerEngine(); a.analyze("text", language="en")'
+
 COPY server ./server
 COPY --from=frontend-builder /app/dist ./playground/dist
 
