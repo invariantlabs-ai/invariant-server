@@ -224,6 +224,23 @@ export const someConst = false;`,
       2
     ),
   },
+  {
+    name: "Personal Identifiable Information",
+    description: "Prevent personal identifiable information from being leaked",
+    policy: `from invariant.detectors import pii
+raise PolicyViolation("found pii", msg) if:
+    (msg: Message)
+    'EMAIL_ADDRESS' in pii(msg)
+`,
+    input: JSON.stringify(
+      [
+        { role: "user", content: "What is Alice's email address?" },
+        { role: "assistant", content: "Alice's email address is hello@invariantlabs.ai" },
+      ],
+      null,
+      2
+    ),
+  },
 ];
 
 export default examples;

@@ -127,7 +127,7 @@ const App = () => {
       }
     } catch (error) {
       console.error("Failed to evaluate policy:", error);
-      setOutput("An error occurred during evaluation. Please check the console for details.");
+      setOutput("An error occurred during evaluation. Please check browser console for details.");
     } finally {
       setLoading(false); // End loading
     }
@@ -232,7 +232,7 @@ const App = () => {
                         </svg>
                       </div>
                     ) : (
-                      <pre className="flex-1 overflow-y-auto whitespace-pre-wrap break-words">{output}</pre>
+                      <div className="flex-1 overflow-y-auto whitespace-pre-wrap break-words">{output}</div>
                     )}
                   </div>
                 </div>
