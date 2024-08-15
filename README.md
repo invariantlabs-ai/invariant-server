@@ -15,6 +15,14 @@ The `--privileged` flag is required to run each session policy in its own [nsjai
 
 Note that `PRODUCTION=true` requires the `--privileged` flag.
 
+If running ubuntu 23.10 or later, you need to run these commands on the host:
+```
+sudo sysctl -w kernel.apparmor_restrict_unprivileged_unconfined=0
+sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+```
+
+This is related to issue [#236](https://github.com/google/nsjail/issues/236).
+
 The application can also be run in development mode by omitting the `PRODUCTION` environment variable:
 
 ```bash
