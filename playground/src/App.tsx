@@ -85,7 +85,11 @@ const App = () => {
       });
 
       const analyzeData = await analyzeResponse.json();
-      setOutput(JSON.stringify(analyzeData, null, 2));
+      if (typeof analyzeData === "string") {
+        setOutput(analyzeData);
+      } else {
+        setOutput(JSON.stringify(analyzeData, null, 2));
+      }
     } catch (error) {
       console.error("Failed to evaluate policy:", error);
       setOutput("An error occurred during evaluation. Please check the console for details.");
