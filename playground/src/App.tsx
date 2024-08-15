@@ -179,9 +179,9 @@ const App = () => {
               <ResizableHandle className="h-2 bg-gray-300 hover:bg-gray-500" />
 
               <ResizablePanel className="flex-1 flex flex-col">
-                <div className="bg-white p-4 shadow rounded flex-1 flex flex-col">
+                <div className="bg-white p-4 shadow rounded flex-1 flex flex-col max-h-[100%]">
                   <h2 className="font-bold mb-2">OUTPUT</h2>
-                  <div className="w-full flex-1 p-2 border rounded bg-gray-50 overflow-auto">
+                  <div className="w-full max-h-full flex-1 p-2 border rounded bg-gray-50 overflow-auto">
                     {loading ? (
                       <div className="flex justify-center items-center h-full">
                         <svg
@@ -206,7 +206,7 @@ const App = () => {
                         </svg>
                       </div>
                     ) : (
-                      <pre>{output}</pre>
+                      <pre className="flex-1 overflow-y-auto whitespace-pre-wrap break-words">{output}</pre>
                     )}
                   </div>
                 </div>
