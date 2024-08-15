@@ -36,8 +36,8 @@ const App = () => {
         console.error("Failed to decode or apply hash data:", error);
       }
     }
-    window.location.hash = '';
-    history.replaceState(null, '', ' ');
+    window.location.hash = "";
+    history.replaceState(null, "", " ");
   };
 
   useEffect(() => {
@@ -68,13 +68,13 @@ const App = () => {
     // Add the event listener for hash changes
     window.addEventListener("hashchange", handleHashChange);
 
-    console.log('i fire once');
+    console.log("i fire once");
 
     // Clean up the event listener on component unmount
     return () => {
       window.removeEventListener("hashchange", handleHashChange);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const createNewSession = async () => {
@@ -152,7 +152,7 @@ const App = () => {
 
   const handleExampleSelect = (exampleIndex: number) => {
     if (exampleIndex < 0 || exampleIndex >= examples.length) return;
-  
+
     const selectedExample = examples[exampleIndex];
     setPolicyCode(selectedExample.policy);
     setInputData(selectedExample.input);
@@ -164,17 +164,20 @@ const App = () => {
     const data = JSON.stringify({ policy: policyCode, input: inputData });
     const encodedData = btoa(data);
     const shareUrl = `${window.location.origin}${window.location.pathname}#${encodedData}`;
-    
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      toast({
-        description: "URL copied to clipboard!",
-      });
-    }).catch((error) => {
-      toast({
-        title: "Uh oh! Something went wrong.",
-        description: error.message,
+
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => {
+        toast({
+          description: "URL copied to clipboard!",
+        });
       })
-    });
+      .catch((error) => {
+        toast({
+          title: "Uh oh! Something went wrong.",
+          description: error.message,
+        });
+      });
   };
 
   return (
@@ -186,19 +189,10 @@ const App = () => {
           <Examples examples={examples} onSelect={handleExampleSelect} />
         </div>
         <div className="flex items-center space-x-4">
-         <button
-            onClick={handleShare}
-            className="bg-background hover:bg-gray-100 px-4 py-2 rounded border text-black"
-          >
+          <button onClick={handleShare} className="bg-background hover:bg-gray-100 px-4 py-2 rounded border text-black">
             Share
           </button>
-          <button
-            onClick={handleEvaluate}
-            className={`bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 ${
-              loading ? "cursor-not-allowed opacity-50" : ""
-            }`}
-            disabled={loading}
-          >
+          <button onClick={handleEvaluate} className={`bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 ${loading ? "cursor-not-allowed opacity-50" : ""}`} disabled={loading}>
             {loading ? "Evaluating..." : "Evaluate"}
           </button>
         </div>
@@ -209,13 +203,7 @@ const App = () => {
           <ResizablePanel className="flex-1 flex flex-col">
             <div className="flex-1 flex flex-col">
               <h2 className="font-bold mb-2 m-2">POLICY</h2>
-              <Editor
-                height="100%"
-                defaultLanguage="python"
-                value={policyCode}
-                onChange={(value) => setPolicyCode(value || "")}
-                theme="vs-light"
-              />
+              <Editor height="100%" defaultLanguage="python" value={policyCode} onChange={(value) => setPolicyCode(value || "")} theme="vs-light" />
             </div>
           </ResizablePanel>
 
@@ -226,13 +214,7 @@ const App = () => {
               <ResizablePanel className="flex-1 flex flex-col">
                 <div className="bg-white p-4 shadow rounded mb-4 flex-1 flex flex-col">
                   <h2 className="font-bold mb-2">INPUT</h2>
-                  <Editor
-                    defaultLanguage="json"
-                    value={inputData}
-                    onChange={handleInputChange}
-                    height="100%"
-                    theme="vs-light"
-                  />
+                  <Editor defaultLanguage="json" value={inputData} onChange={handleInputChange} height="100%" theme="vs-light" />
                 </div>
               </ResizablePanel>
 
@@ -244,25 +226,9 @@ const App = () => {
                   <div className="w-full max-h-full flex-1 p-2 border rounded bg-gray-50 overflow-auto">
                     {loading ? (
                       <div className="flex justify-center items-center h-full">
-                        <svg
-                          className="animate-spin h-8 w-8 text-indigo-500"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                          ></path>
+                        <svg className="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                         </svg>
                       </div>
                     ) : (
