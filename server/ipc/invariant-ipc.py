@@ -46,10 +46,8 @@ if __name__ == "__main__":
     semgrep([Message(role="user", content="print(1)")], lang="python")
 
     mp.set_start_method("fork")
-    server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    socket_path = "/tmp/invariant_worker.sock"
-    os.remove(socket_path)
-    server_socket.bind(socket_path)
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(('0.0.0.0', 9999))
     server_socket.listen(1024)
 
     while True:

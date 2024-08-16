@@ -16,16 +16,17 @@ class IpcController:
         return cls._instance
 
     def _init(self):
-        self.socket_path = "/tmp/invariant_worker.sock"
         self.start_process()
+        self.host = '127.0.0.1'
+        self.port = 9999
 
     def request(self, message):
         p = self.process.poll()
         if p is not None:
             self.start_process()
 
-        client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        client_socket.connect(self.socket_path)
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.connect((self.host, self.port))
         
         client_socket.send(json.dumps(message).encode())
         
