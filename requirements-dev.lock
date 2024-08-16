@@ -140,6 +140,7 @@ networkx==3.3
     # via torch
 numpy==1.26.4
     # via blis
+    # via invariant-server
     # via spacy
     # via thinc
     # via transformers
