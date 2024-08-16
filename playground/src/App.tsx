@@ -8,7 +8,6 @@ import Examples from "@/components/Examples";
 import examples from "@/examples";
 
 const App = () => {
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[0].policy);
   const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || examples[0].input);
   const [output, setOutput] = useState<string>("");
@@ -41,34 +40,11 @@ const App = () => {
   };
 
   useEffect(() => {
-    const checkSessionValidity = async (sessionId: string) => {
-      try {
-        const response = await fetch(`/session/?session_id=${sessionId}`);
-        if (response.status === 200) {
-          setSessionId(sessionId);
-        } else {
-          createNewSession();
-        }
-      } catch (error) {
-        console.error("Failed to validate session:", error);
-        createNewSession();
-      }
-    };
-    // Initialize session ID
-    const storedSessionId = localStorage.getItem("session_id");
-    if (storedSessionId && /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i.test(storedSessionId)) {
-      checkSessionValidity(storedSessionId);
-    } else {
-      createNewSession();
-    }
-
     // Call the handler immediately in case there's an initial hash
     handleHashChange();
 
     // Add the event listener for hash changes
     window.addEventListener("hashchange", handleHashChange);
-
-    console.log("i fire once");
 
     // Clean up the event listener on component unmount
     return () => {
@@ -77,20 +53,7 @@ const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const createNewSession = async () => {
-    try {
-      const response = await fetch("/session/new");
-      const data = await response.json();
-      localStorage.setItem("session_id", data.id);
-      setSessionId(data.id);
-    } catch (error) {
-      console.error("Failed to create session:", error);
-    }
-  };
-
   const handleEvaluate = async () => {
-    if (!sessionId) return;
-
     setLoading(true); // Start loading
     setOutput(""); // Clear previous output
 
@@ -99,24 +62,13 @@ const App = () => {
       localStorage.setItem("policy", policyCode);
       localStorage.setItem("input", inputData);
 
-      // Create a new policy
-      const policyResponse = await fetch(`/policy/new?session_id=${sessionId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ rule: policyCode }),
-      });
-      const policyData = await policyResponse.json();
-      const policyId = policyData.policy_id;
-
       // Analyze the policy with the input data
-      const analyzeResponse = await fetch(`/policy/${policyId}/analyze?session_id=${sessionId}`, {
+      const analyzeResponse = await fetch(`/api/policy/analyze`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ trace: JSON.parse(inputData) }),
+        body: JSON.stringify({ trace: JSON.parse(inputData), policy: policyCode }),
       });
 
       const analyzeData = await analyzeResponse.json();

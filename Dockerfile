@@ -31,7 +31,7 @@ RUN /bin/bash -c 'source /home/app/.rye/env && rye sync'
 ENV PATH="/home/app/.rye/shims:${PATH}"
 
 # Cache presidio-analyzer
-RUN rye run python3 -c 'import presidio_analyzer; a = presidio_analyzer.AnalyzerEngine(); a.analyze("text", language="en")'
+RUN rye run python3 -c 'from huggingface_hub import snapshot_download; import presidio_analyzer; a = presidio_analyzer.AnalyzerEngine(); a.analyze("text", language="en"); snapshot_download(repo_id="protectai/deberta-v3-base-prompt-injection-v2"); snapshot_download(repo_id="KoalaAI/Text-Moderation")'
 
 COPY server ./server
 COPY --from=frontend-builder /app/dist ./playground/dist

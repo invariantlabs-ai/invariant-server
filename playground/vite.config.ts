@@ -12,19 +12,7 @@ export default defineConfig({
   server: {
     proxy: {
       // Proxying /monitor requests to 127.0.0.1:8000
-      "/monitor": {
-        target: "http://127.0.0.1:8000",
-        changeOrigin: true,
-        secure: false,
-      },
-      // Proxying /session requests to 127.0.0.1:8000
-      "/session": {
-        target: "http://127.0.0.1:8000",
-        changeOrigin: true,
-        secure: false,
-      },
-      // Proxying /policy requests to 127.0.0.1:8000
-      "/policy": {
+      "/api": {
         target: "http://127.0.0.1:8000",
         changeOrigin: true,
         secure: false,
