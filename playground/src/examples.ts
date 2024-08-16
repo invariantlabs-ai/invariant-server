@@ -224,7 +224,7 @@ export const someConst = false;`,
       2
     ),
   },
-  {
+  /*{
     name: "Personal Identifiable Information",
     description: "Prevent personal identifiable information from being leaked",
     policy: `from invariant.detectors import pii
@@ -240,7 +240,7 @@ raise PolicyViolation("found pii", msg) if:
       null,
       2
     ),
-  },
+  },*/
 ];
 
 export default examples;
