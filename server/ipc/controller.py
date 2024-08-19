@@ -17,7 +17,8 @@ class IpcController:
         return cls._instance
 
     def _init(self):
-        self.socket_path = "/tmp/invariant.sock"
+        self.socket_path = "/tmp/sockets/invariant.sock"
+        os.makedirs("/tmp/sockets", exist_ok=True)
         self.start_process()
 
     def request(self, message):
@@ -46,8 +47,6 @@ class IpcController:
             os.remove(self.socket_path)
 
         if settings.production:
-            # Create new socket file if in production mode
-            socket.socket(socket.AF_UNIX, socket.SOCK_STREAM).bind(self.socket_path)
             # This is only meant to be used in the production Docker container
             self.process = subprocess.Popen(
                 [

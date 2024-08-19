@@ -52,7 +52,7 @@ def worker(client_socket):
 if __name__ == "__main__":
     mp.set_start_method("fork")
     server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    socket_path = "/tmp/invariant.sock"
+    socket_path = "/tmp/sockets/invariant.sock"
 
     # Ensure the socket does not already exist
     server_socket.bind(socket_path)
