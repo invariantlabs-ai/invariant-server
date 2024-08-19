@@ -15,6 +15,8 @@ anyio==4.4.0
     # via httpx
     # via starlette
     # via watchfiles
+asyncache==0.3.1
+    # via invariant-server
 attrs==23.2.0
     # via glom
     # via jsonschema
@@ -29,6 +31,7 @@ boltons==21.0.0
 bracex==2.4
     # via wcmatch
 cachetools==5.5.0
+    # via asyncache
     # via invariant-server
 catalogue==2.0.10
     # via spacy

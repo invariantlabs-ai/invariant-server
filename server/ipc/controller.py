@@ -3,7 +3,7 @@ import sys
 import json
 import os
 from server.config import settings
-import socket
+import asyncio
 import psutil
 
 
@@ -21,18 +21,19 @@ class IpcController:
         os.makedirs("/tmp/sockets", exist_ok=True)
         self.start_process()
 
-    def request(self, message):
+    async def request(self, message):
         p = self.process.poll()
         if p is not None:
             self.start_process()
 
-        client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        client_socket.connect(self.socket_path)
+        reader, writer = await asyncio.open_unix_connection(self.socket_path)
+        writer.write(json.dumps(message).encode())
+        await writer.drain()
 
-        client_socket.send(json.dumps(message).encode())
+        response = await reader.read(10 * 1024 * 1024)
 
-        response = client_socket.recv(10 * 1024 * 1024)
-        client_socket.close()
+        writer.close()
+        await writer.wait_closed()
 
         return json.loads(response.decode())
 

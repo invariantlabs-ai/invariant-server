@@ -1,4 +1,5 @@
-from cachetools import cached, LRUCache
+from cachetools import LRUCache
+from asyncache import cached
 from cachetools.keys import hashkey
 from fastapi import APIRouter, Depends, HTTPException, Request
 from server import schemas
@@ -12,14 +13,14 @@ router = APIRouter()
     LRUCache(128),
     key=lambda body_hash, ipc, policy, past_events, pending_events: hashkey(body_hash),
 )
-def cached_check(
+async def cached_check(
     body_hash: str,
     ipc: IpcController,
     policy: str,
     past_events: List[Dict],
     pending_events: List[Dict],
 ):
-    result = ipc.request(
+    result = await ipc.request(
         {
             "type": "monitor_check",
             "past_events": past_events,
@@ -31,13 +32,13 @@ def cached_check(
 
 
 @router.post("/check")
-def monitor_check(
+async def monitor_check(
     request: Request,
     data: schemas.MonitorCheck,
     ipc: IpcController = Depends(get_ipc_controller),
 ):
     try:
-        result = cached_check(
+        result = await cached_check(
             request.state.body_hash,
             ipc,
             data.policy,
