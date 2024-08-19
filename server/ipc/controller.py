@@ -5,6 +5,7 @@ import os
 from server.config import settings
 import asyncio
 import psutil
+import time
 
 
 class IpcController:
@@ -63,6 +64,9 @@ class IpcController:
             self.process = subprocess.Popen(
                 [sys.executable, os.path.abspath(__file__ + "/../invariant-ipc.py")]
             )
+
+        while not os.path.exists(self.socket_path):
+            time.sleep(0.1)
 
     def close(self):
         self.process.terminate()

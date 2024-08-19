@@ -51,6 +51,7 @@ def worker(client_socket):
     finally:
         client_socket.close()
 
+
 def detect_all(self, code: str, lang: str):
     temp_file = self.write_to_temp_file(code, lang)
     if lang == "python":
@@ -60,7 +61,20 @@ def detect_all(self, code: str, lang: str):
     else:
         raise ValueError(f"Unsupported language: {lang}")
 
-    cmd = ["rye", "run", "semgrep", "scan", "--json", "--config", config, "--disable-version-check", "--metrics", "off", "--quiet", temp_file]
+    cmd = [
+        "rye",
+        "run",
+        "semgrep",
+        "scan",
+        "--json",
+        "--config",
+        config,
+        "--disable-version-check",
+        "--metrics",
+        "off",
+        "--quiet",
+        temp_file,
+    ]
     try:
         out = subprocess.run(cmd, capture_output=True)
         semgrep_res = json.loads(out.stdout.decode("utf-8"))
@@ -77,6 +91,7 @@ def detect_all(self, code: str, lang: str):
         issues.append(CodeIssue(description=description, severity=severity))
     return issues
 
+
 if __name__ == "__main__":
     mp.set_start_method("fork")
     server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -86,6 +101,7 @@ if __name__ == "__main__":
 
     if nsjail:
         from invariant.runtime.utils.code import SemgrepDetector
+
         SemgrepDetector.detect_all = detect_all
 
     # Ensure the socket does not already exist
