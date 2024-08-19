@@ -67,10 +67,7 @@ exceptiongroup==1.2.1
 face==22.0.0
     # via glom
 fastapi==0.111.0
-    # via fastapi-cache2
     # via fastapi-utils
-    # via invariant-server
-fastapi-cache2==0.2.2
     # via invariant-server
 fastapi-cli==0.0.4
     # via fastapi
@@ -156,8 +153,6 @@ packaging==24.1
     # via weasel
 peewee==3.17.6
     # via semgrep
-pendulum==3.0.0
-    # via fastapi-cache2
 phonenumbers==8.13.40
     # via presidio-analyzer
 pip==24.1.2
@@ -184,9 +179,6 @@ pydantic-settings==2.3.4
     # via invariant-server
 pygments==2.18.0
     # via rich
-python-dateutil==2.9.0.post0
-    # via pendulum
-    # via time-machine
 python-dotenv==1.0.1
     # via pydantic-settings
     # via uvicorn
@@ -234,8 +226,6 @@ setuptools==70.3.0
     # via torch
 shellingham==1.5.4
     # via typer
-six==1.16.0
-    # via python-dateutil
 smart-open==7.0.4
     # via weasel
 sniffio==1.3.1
@@ -261,8 +251,6 @@ termcolor==2.4.0
     # via invariant
 thinc==8.2.5
     # via spacy
-time-machine==2.15.0
-    # via pendulum
 tldextract==5.1.2
     # via presidio-analyzer
 tokenizers==0.19.1
@@ -283,7 +271,6 @@ typer==0.12.3
     # via weasel
 typing-extensions==4.12.2
     # via fastapi
-    # via fastapi-cache2
     # via huggingface-hub
     # via pydantic
     # via pydantic-core
@@ -293,8 +280,6 @@ typing-extensions==4.12.2
     # via typing-inspect
 typing-inspect==0.9.0
     # via invariant-server
-tzdata==2024.1
-    # via pendulum
 ujson==5.10.0
     # via fastapi
 urllib3==2.2.2
@@ -302,7 +287,6 @@ urllib3==2.2.2
     # via semgrep
 uvicorn==0.30.1
     # via fastapi
-    # via fastapi-cache2
     # via invariant-server
 uvloop==0.19.0
     # via uvicorn
