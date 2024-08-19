@@ -22,9 +22,27 @@ class IpcController:
         os.makedirs("/tmp/sockets", exist_ok=True)
         self.start_process()
 
+    def exists(self):
+        if settings.production:
+            return os.path.exists(self.socket_path)
+
+        process = False
+        for proc in psutil.process_iter():
+            try:
+                cmdline = proc.cmdline()
+                for cmd in cmdline:
+                    if "invariant-ipc.py" in cmd:
+                        process = True
+                        break
+                if process:
+                    break
+            except (psutil.AccessDenied, psutil.ZombieProcess, psutil.NoSuchProcess):
+                continue
+
+        return process and os.path.exists(self.socket_path)
+
     async def request(self, message):
-        p = self.process.poll()
-        if p is not None:
+        if not self.exists():
             self.start_process()
 
         reader, writer = await asyncio.open_unix_connection(self.socket_path)
@@ -39,11 +57,6 @@ class IpcController:
         return json.loads(response.decode())
 
     def start_process(self):
-        # Kill any existing process using the Unix socket
-        for proc in psutil.process_iter():
-            if "invariant-ipc.py" in proc.name():
-                proc.kill()
-
         # Remove existing socket file if it exists
         if os.path.exists(self.socket_path):
             os.remove(self.socket_path)
@@ -69,9 +82,17 @@ class IpcController:
             time.sleep(0.1)
 
     def close(self):
-        self.process.terminate()
-        if os.path.exists(self.socket_path):
-            os.remove(self.socket_path)
+        # Kill any existing process using the Unix socket
+        for proc in psutil.process_iter():
+            try:
+                cmdline = proc.cmdline()
+                for cmd in cmdline:
+                    if "invariant-ipc.py" in cmd:
+                        proc.kill()
+                        break
+            except (psutil.AccessDenied, psutil.ZombieProcess, psutil.NoSuchProcess):
+                continue
+        os.remove(self.socket_path)
 
 
 class IpcControllerSingleton:
