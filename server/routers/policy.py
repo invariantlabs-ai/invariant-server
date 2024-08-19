@@ -6,7 +6,7 @@ router = APIRouter()
 
 
 @router.post("/analyze")
-async def analyze_policy(
+def analyze_policy(
     data: schemas.PolicyAnalyze,
 ):
     ipc = IpcController()
