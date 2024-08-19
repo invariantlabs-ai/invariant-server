@@ -46,6 +46,8 @@ class IpcController:
             os.remove(self.socket_path)
 
         if settings.production:
+            # Create new socket file if in production mode
+            socket.socket(socket.AF_UNIX, socket.SOCK_STREAM).bind(self.socket_path)
             # This is only meant to be used in the production Docker container
             self.process = subprocess.Popen(
                 [
