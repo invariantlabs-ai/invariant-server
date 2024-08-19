@@ -1,6 +1,7 @@
 import socket
 import json
 import multiprocessing as mp
+import subprocess
 from invariant import Policy, Monitor
 from invariant.stdlib.invariant.detectors import (
     prompt_injection,
@@ -9,7 +10,9 @@ from invariant.stdlib.invariant.detectors import (
     semgrep,
 )
 from invariant.stdlib.invariant.nodes import Message
+from invariant.runtime.utils.code import CodeIssue
 from typing import List, Dict
+import os
 
 
 def analyze(policy: str, trace: List[Dict]):
@@ -48,11 +51,42 @@ def worker(client_socket):
     finally:
         client_socket.close()
 
+def detect_all(self, code: str, lang: str):
+    temp_file = self.write_to_temp_file(code, lang)
+    if lang == "python":
+        config = "./r/python.lang.security"
+    elif lang == "bash":
+        config = "./r/bash"
+    else:
+        raise ValueError(f"Unsupported language: {lang}")
+
+    cmd = ["rye", "run", "semgrep", "scan", "--json", "--config", config, "--disable-version-check", "--metrics", "off", "--quiet", temp_file]
+    try:
+        out = subprocess.run(cmd, capture_output=True)
+        semgrep_res = json.loads(out.stdout.decode("utf-8"))
+    except Exception:
+        out = subprocess.run(cmd[2:], capture_output=True)
+        semgrep_res = json.loads(out.stdout.decode("utf-8"))
+    issues = []
+    for res in semgrep_res["results"]:
+        severity = self.get_severity(res["extra"]["severity"])
+        source = res["extra"]["metadata"]["source"]
+        message = res["extra"]["message"]
+        lines = res["extra"]["lines"]
+        description = f"{message} (source: {source}, lines: {lines})"
+        issues.append(CodeIssue(description=description, severity=severity))
+    return issues
 
 if __name__ == "__main__":
     mp.set_start_method("fork")
     server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     socket_path = "/tmp/sockets/invariant.sock"
+
+    nsjail = not not os.getenv("NSJAIL", False)
+
+    if nsjail:
+        from invariant.runtime.utils.code import SemgrepDetector
+        SemgrepDetector.detect_all = detect_all
 
     # Ensure the socket does not already exist
     server_socket.bind(socket_path)
