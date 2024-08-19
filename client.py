@@ -34,7 +34,11 @@ class InvariantClient:
         def check(self, past_events: List[Dict], pending_events: List[Dict]):
             response = requests.post(
                 f"{self.server}/api/monitor/check",
-                json={"past_events": past_events, "pending_events": pending_events, "policy": self.policy},
+                json={
+                    "past_events": past_events,
+                    "pending_events": pending_events,
+                    "policy": self.policy,
+                },
             )
             return response.text
 

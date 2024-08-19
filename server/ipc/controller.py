@@ -17,7 +17,7 @@ class IpcController:
 
     def _init(self):
         self.start_process()
-        self.host = '127.0.0.1'
+        self.host = "127.0.0.1"
         self.port = 9999
 
     def request(self, message):
@@ -27,12 +27,12 @@ class IpcController:
 
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.connect((self.host, self.port))
-        
+
         client_socket.send(json.dumps(message).encode())
-        
-        response = client_socket.recv(10*1024*1024)
+
+        response = client_socket.recv(10 * 1024 * 1024)
         client_socket.close()
-        
+
         return json.loads(response.decode())
 
     def start_process(self):
@@ -45,15 +45,12 @@ class IpcController:
                     "/home/app/server/nsjail.cfg",
                     "--",
                     "/home/app/.venv/bin/python3",
-                    "/home/app/server/ipc/invariant-ipc.py"
+                    "/home/app/server/ipc/invariant-ipc.py",
                 ]
             )
         else:
             self.process = subprocess.Popen(
-                [
-                    sys.executable,
-                    os.path.abspath(__file__ + "/../invariant-ipc.py")
-                ]
+                [sys.executable, os.path.abspath(__file__ + "/../invariant-ipc.py")]
             )
 
     def close(self):

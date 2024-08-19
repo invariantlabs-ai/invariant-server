@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Dict
 
+
 class PolicyAnalyze(BaseModel):
     trace: List[Dict]
     policy: str

@@ -1,8 +1,20 @@
 from fastapi import FastAPI
-# from server.ipc.controller import get_ipc_controller
+from server.ipc.controller import IpcController
 from server.routers import policy, monitor
-# from fastapi_utils.tasks import repeat_every
 from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    FastAPICache.init(InMemoryBackend(), prefix="fastapi-cache")
+    yield
+    ipc = IpcController()
+    ipc.close()
+
 
 app = FastAPI(
     title="Invariant API",
@@ -14,12 +26,3 @@ app.include_router(policy.router, prefix="/api/policy", tags=["policy"])
 app.include_router(monitor.router, prefix="/api/monitor", tags=["monitor"])
 
 app.mount("/", StaticFiles(directory="playground/dist/", html=True), name="assets")
-
-
-"""
-@app.on_event("startup")
-@repeat_every(seconds=60)  # 1 minute
-def cleanup_old_ipc() -> None:
-    ipc_controller = get_ipc_controller()
-    ipc_controller.cleanup()
-"""
