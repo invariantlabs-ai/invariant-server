@@ -1,7 +1,9 @@
 from fastapi import FastAPI, Request
 from server.routers import policy, monitor
+from server.ipc.controller import get_ipc_controller
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
+from contextlib import asynccontextmanager
 import hashlib
 
 
@@ -19,10 +21,18 @@ class HashRequestBodyMiddleware(BaseHTTPMiddleware):
         return response
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ipc = get_ipc_controller()
+    yield
+    ipc.close()
+
+
 app = FastAPI(
     title="Invariant API",
     summary="REST API Server made to run Invariant policies remotely.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(HashRequestBodyMiddleware)

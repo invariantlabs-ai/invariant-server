@@ -51,8 +51,11 @@ def worker(client_socket):
 
 if __name__ == "__main__":
     mp.set_start_method("fork")
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(("0.0.0.0", 9999))
+    server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    socket_path = "/tmp/invariant.sock"
+
+    # Ensure the socket does not already exist
+    server_socket.bind(socket_path)
     server_socket.listen(1024)
 
     # pii([Message(role="user", content="test")])

@@ -8,7 +8,10 @@ from typing import List, Dict
 router = APIRouter()
 
 
-@cached(LRUCache(128), key=lambda body_hash, ipc, policy, past_events, pending_events: hashkey(body_hash))
+@cached(
+    LRUCache(128),
+    key=lambda body_hash, ipc, policy, past_events, pending_events: hashkey(body_hash),
+)
 def cached_check(
     body_hash: str,
     ipc: IpcController,

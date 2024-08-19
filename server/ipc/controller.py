@@ -17,17 +17,16 @@ class IpcController:
         return cls._instance
 
     def _init(self):
+        self.socket_path = "/tmp/invariant.sock"
         self.start_process()
-        self.host = "127.0.0.1"
-        self.port = 9999
 
     def request(self, message):
         p = self.process.poll()
         if p is not None:
             self.start_process()
 
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect((self.host, self.port))
+        client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client_socket.connect(self.socket_path)
 
         client_socket.send(json.dumps(message).encode())
 
@@ -37,9 +36,15 @@ class IpcController:
         return json.loads(response.decode())
 
     def start_process(self):
+        # Kill any existing process using the Unix socket
         for proc in psutil.process_iter():
             if "invariant-ipc.py" in proc.name():
                 proc.kill()
+
+        # Remove existing socket file if it exists
+        if os.path.exists(self.socket_path):
+            os.remove(self.socket_path)
+
         if settings.production:
             # This is only meant to be used in the production Docker container
             self.process = subprocess.Popen(
@@ -59,6 +64,8 @@ class IpcController:
 
     def close(self):
         self.process.terminate()
+        if os.path.exists(self.socket_path):
+            os.remove(self.socket_path)
 
 
 class IpcControllerSingleton:
