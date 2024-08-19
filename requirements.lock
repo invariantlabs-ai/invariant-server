@@ -28,6 +28,8 @@ boltons==21.0.0
     # via semgrep
 bracex==2.4
     # via wcmatch
+cachetools==5.5.0
+    # via invariant-server
 catalogue==2.0.10
     # via spacy
     # via srsly

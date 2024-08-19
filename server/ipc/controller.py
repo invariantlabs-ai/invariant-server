@@ -4,6 +4,7 @@ import json
 import os
 from server.config import settings
 import socket
+import psutil
 
 
 class IpcController:
@@ -36,6 +37,9 @@ class IpcController:
         return json.loads(response.decode())
 
     def start_process(self):
+        for proc in psutil.process_iter():
+            if "invariant-ipc.py" in proc.name():
+                proc.kill()
         if settings.production:
             # This is only meant to be used in the production Docker container
             self.process = subprocess.Popen(

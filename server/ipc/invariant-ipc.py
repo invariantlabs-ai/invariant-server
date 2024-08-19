@@ -1,6 +1,5 @@
 import socket
 import json
-import os
 import multiprocessing as mp
 from invariant import Policy, Monitor
 from invariant.stdlib.invariant.detectors import (
@@ -13,9 +12,9 @@ from invariant.stdlib.invariant.nodes import Message
 from typing import List, Dict
 
 
-def analyze(policy: str, traces: List[Dict]):
+def analyze(policy: str, trace: List[Dict]):
     policy = Policy.from_string(policy)
-    analysis_result = policy.analyze(traces)
+    analysis_result = policy.analyze(trace)
     return {
         "errors": [repr(error) for error in analysis_result.errors],
         "handled_errors": [
@@ -33,7 +32,7 @@ def monitor_check(past_events: List[Dict], pending_events: List[Dict], policy: s
 def handle_request(data):
     message = json.loads(data)
     if message["type"] == "analyze":
-        result = analyze(message["policy"], message["traces"])
+        result = analyze(message["policy"], message["trace"])
     elif message["type"] == "monitor_check":
         result = monitor_check(
             message["past_events"], message["pending_events"], message["policy"]
