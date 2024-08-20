@@ -23,8 +23,12 @@ class IpcController:
         self.start_process()
 
     def exists(self):
+        if not os.path.exists(self.socket_path):
+            self.close()
+            return False
+
         if settings.production:
-            return os.path.exists(self.socket_path)
+            return True
 
         process = False
         for proc in psutil.process_iter():
@@ -92,7 +96,8 @@ class IpcController:
                         break
             except (psutil.AccessDenied, psutil.ZombieProcess, psutil.NoSuchProcess):
                 continue
-        os.remove(self.socket_path)
+        if os.path.exists(self.socket_path):
+            os.remove(self.socket_path)
 
 
 class IpcControllerSingleton:

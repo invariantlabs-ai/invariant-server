@@ -48,6 +48,8 @@ def worker(client_socket):
         data = client_socket.recv(10 * 1024 * 1024)
         response = handle_request(data)
         client_socket.sendall(response)
+    except Exception as e:
+        client_socket.sendall(json.dumps(str(e)).encode())
     finally:
         client_socket.close()
 
