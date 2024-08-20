@@ -3,6 +3,8 @@ import sys
 import json
 import os
 from server.config import settings
+import asyncio
+import psutil
 import time
 
 
@@ -16,35 +18,52 @@ class IpcController:
         return cls._instance
 
     def _init(self):
-        self.process_map = {}
-        self.rpc_map = {}
+        self.socket_path = "/tmp/sockets/invariant.sock"
+        os.makedirs("/tmp/sockets", exist_ok=True)
+        self.start_process()
 
-    def _execute_function(self, session_id, func_name, *args, **kwargs):
-        if session_id not in self.rpc_map:
-            return f"Session {session_id} does not exist."
+    def exists(self):
+        if settings.production:
+            return os.path.exists(self.socket_path)
 
-        rpc_info = self.rpc_map[session_id]
-        message = json.dumps({"func_name": func_name, "args": args, "kwargs": kwargs})
-        try:
-            rpc_info["timestamp"] = time.time()
-            rpc_info["stdin"].write(message + "\n")
-            rpc_info["stdin"].flush()
-            result = rpc_info["stdout"].readline().strip()
-            rpc_info["timestamp"] = time.time()
-        except BrokenPipeError as e:
-            result = f"Invariant Controller IPC Error: {e}"
-            self.start_process(session_id)
-            return result
-        try:
-            result = json.loads(result)
-        except json.JSONDecodeError as e:
-            result = f"Invariant Controller IPC Error: {e} with result {result}"
-        return result
+        process = False
+        for proc in psutil.process_iter():
+            try:
+                cmdline = proc.cmdline()
+                for cmd in cmdline:
+                    if "invariant-ipc.py" in cmd:
+                        process = True
+                        break
+                if process:
+                    break
+            except (psutil.AccessDenied, psutil.ZombieProcess, psutil.NoSuchProcess):
+                continue
 
-    def start_process(self, session_id):
+        return process and os.path.exists(self.socket_path)
+
+    async def request(self, message):
+        if not self.exists():
+            self.start_process()
+
+        reader, writer = await asyncio.open_unix_connection(self.socket_path)
+        writer.write(json.dumps(message).encode())
+        await writer.drain()
+
+        response = await reader.read(10 * 1024 * 1024)
+
+        writer.close()
+        await writer.wait_closed()
+
+        return json.loads(response.decode())
+
+    def start_process(self):
+        # Remove existing socket file if it exists
+        if os.path.exists(self.socket_path):
+            os.remove(self.socket_path)
+
         if settings.production:
             # This is only meant to be used in the production Docker container
-            process = subprocess.Popen(
+            self.process = subprocess.Popen(
                 [
                     "nsjail",
                     "-C",
@@ -52,53 +71,28 @@ class IpcController:
                     "--",
                     "/home/app/.venv/bin/python3",
                     "/home/app/server/ipc/invariant-ipc.py",
-                    session_id,
-                ],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                text=True,
+                ]
             )
         else:
-            process = subprocess.Popen(
-                [
-                    sys.executable,
-                    os.path.abspath(__file__ + "/../invariant-ipc.py"),
-                    session_id,
-                ],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                text=True,
+            self.process = subprocess.Popen(
+                [sys.executable, os.path.abspath(__file__ + "/../invariant-ipc.py")]
             )
-        self.process_map[session_id] = process
-        self.rpc_map[session_id] = {
-            "stdin": process.stdin,
-            "stdout": process.stdout,
-            "timestamp": time.time(),
-        }
 
-    def call_function(self, session_id, func_name, *args, **kwargs):
-        if session_id not in self.rpc_map:
-            self.start_process(session_id)
-        return self._execute_function(session_id, func_name, *args, **kwargs)
+        while not os.path.exists(self.socket_path):
+            time.sleep(0.1)
 
-    def stop_process(self, session_id):
-        if session_id in self.rpc_map:
-            self.call_function(session_id, "terminate")
-            self.rpc_map[session_id]["stdin"].close()
-            self.rpc_map[session_id]["stdout"].close()
-            process = self.process_map.pop(session_id, None)
-            del self.rpc_map[session_id]
-            if process:
-                process.terminate()
-
-    def cleanup(self):
-        for session_id in list(self.rpc_map.keys()):
-            if (
-                session_id in self.rpc_map
-                and time.time() - self.rpc_map[session_id]["timestamp"]
-                > settings.idle_timeout
-            ):
-                self.stop_process(session_id)
+    def close(self):
+        # Kill any existing process using the Unix socket
+        for proc in psutil.process_iter():
+            try:
+                cmdline = proc.cmdline()
+                for cmd in cmdline:
+                    if "invariant-ipc.py" in cmd:
+                        proc.kill()
+                        break
+            except (psutil.AccessDenied, psutil.ZombieProcess, psutil.NoSuchProcess):
+                continue
+        os.remove(self.socket_path)
 
 
 class IpcControllerSingleton:

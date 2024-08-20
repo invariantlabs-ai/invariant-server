@@ -1,31 +1,43 @@
-from fastapi import Depends, FastAPI
-from server.ipc.controller import IpcController, get_ipc_controller
-from server.routers import session, policy, monitor
-from server.database import engine
-from server.models import Base
-from fastapi_utils.tasks import repeat_every
+from fastapi import FastAPI, Request
+from server.routers import policy, monitor
+from server.ipc.controller import get_ipc_controller
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+from contextlib import asynccontextmanager
+import hashlib
 
-Base.metadata.create_all(bind=engine)
+
+class HashRequestBodyMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        body = await request.body()
+        # Calculate the hash of the request body
+        body_hash = hashlib.blake2b(body).hexdigest()
+
+        # Add the hash to the request state
+        request.state.body_hash = body_hash
+
+        # Proceed with the request
+        response = await call_next(request)
+        return response
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ipc = get_ipc_controller()
+    yield
+    ipc.close()
+
 
 app = FastAPI(
     title="Invariant API",
     summary="REST API Server made to run Invariant policies remotely.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
+app.add_middleware(HashRequestBodyMiddleware)
 
-@app.get("/")
-def index():
-    return {"ok": True}
+app.include_router(policy.router, prefix="/api/policy", tags=["policy"])
+app.include_router(monitor.router, prefix="/api/monitor", tags=["monitor"])
 
-
-app.include_router(session.router, prefix="/session", tags=["session"])
-app.include_router(policy.router, prefix="/policy", tags=["policy"])
-app.include_router(monitor.router, prefix="/monitor", tags=["monitor"])
-
-
-@app.on_event("startup")
-@repeat_every(seconds=60)  # 1 minute
-def cleanup_old_ipc() -> None:
-    ipc_controller = get_ipc_controller()
-    ipc_controller.cleanup()
+app.mount("/", StaticFiles(directory="playground/dist/", html=True), name="assets")

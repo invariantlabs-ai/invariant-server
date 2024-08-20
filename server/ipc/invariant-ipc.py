@@ -1,15 +1,23 @@
-import sys
+import socket
 import json
+import multiprocessing as mp
+import subprocess
 from invariant import Policy, Monitor
-from typing import List, Dict, Optional
+from invariant.stdlib.invariant.detectors import (
+    prompt_injection,
+    pii,
+    moderated,
+    semgrep,
+)
+from invariant.stdlib.invariant.nodes import Message
+from invariant.runtime.utils.code import CodeIssue
+from typing import List, Dict
+import os
 
-session_id = ""
-monitors: Dict[id, Monitor] = {}
 
-
-def analyze(policy: str, traces: List[Dict]):
+def analyze(policy: str, trace: List[Dict]):
     policy = Policy.from_string(policy)
-    analysis_result = policy.analyze(traces)
+    analysis_result = policy.analyze(trace)
     return {
         "errors": [repr(error) for error in analysis_result.errors],
         "handled_errors": [
@@ -18,87 +26,96 @@ def analyze(policy: str, traces: List[Dict]):
     }
 
 
-def monitor_check(
-    monitor_id: int,
-    past_events: List[Dict],
-    pending_events: List[Dict],
-    policy: Optional[str] = None,
-):
-    global monitors
-    if monitor_id not in monitors:
-        if policy:
-            monitors[monitor_id] = Monitor.from_string(policy)
-        else:
-            return "Monitor not found"
-    monitor = monitors[monitor_id]
+def monitor_check(past_events: List[Dict], pending_events: List[Dict], policy: str):
+    monitor = Monitor.from_string(policy)
     check_result = monitor.check(past_events, pending_events)
     return [repr(error) for error in check_result]
 
 
-def create_monitor(monitor_id: int, policy: str):
-    global monitors
-    if monitor_id in monitors:
-        return "Monitor not found"
-
-    monitors[monitor_id] = Monitor.from_string(policy)
-    return monitor_id
-
-
-def delete_monitor(monitor_id: int):
-    global monitors
-    if monitor_id in monitors:
-        del monitors[monitor_id]  # hopefully python GC will take care of the rest
-        return True
-    return "Monitor not found."
+def handle_request(data):
+    message = json.loads(data)
+    if message["type"] == "analyze":
+        result = analyze(message["policy"], message["trace"])
+    elif message["type"] == "monitor_check":
+        result = monitor_check(
+            message["past_events"], message["pending_events"], message["policy"]
+        )
+    return json.dumps(result).encode()
 
 
-def session():
-    return session_id
+def worker(client_socket):
+    try:
+        data = client_socket.recv(10 * 1024 * 1024)
+        response = handle_request(data)
+        client_socket.sendall(response)
+    finally:
+        client_socket.close()
 
 
-# Map of function names to function objects
-function_map = {
-    "analyze": analyze,
-    "session": session,
-    "monitor_check": monitor_check,
-    "create_monitor": create_monitor,
-    "delete_monitor": delete_monitor,
-}
+def detect_all(self, code: str, lang: str):
+    temp_file = self.write_to_temp_file(code, lang)
+    if lang == "python":
+        config = "./r/python.lang.security"
+    elif lang == "bash":
+        config = "./r/bash"
+    else:
+        raise ValueError(f"Unsupported language: {lang}")
 
-
-def main():
-    global session_id
-    session_id = sys.argv[1]
-    while True:
-        try:
-            line = sys.stdin.readline().strip()
-            if not line:
-                continue
-            message = json.loads(line)
-            func_name = message["func_name"]
-            args = message["args"]
-            kwargs = message["kwargs"]
-            if func_name == "terminate":
-                break
-            if func_name in function_map:
-                try:
-                    result = function_map[func_name](*args, **kwargs)
-                except Exception as e:
-                    import traceback
-
-                    tb = traceback.format_exc()
-                    result = f"Invariant IPC Error: {e} traceback: {tb}"
-            else:
-                result = f"Function {func_name} not found."
-            result = json.dumps(result)
-            sys.stdout.write(result + "\n")
-            sys.stdout.flush()
-        except EOFError:
-            break
-        except Exception as e:
-            sys.stdout.write(f"Error: {e}\n")
-            sys.stdout.flush()
+    cmd = [
+        "rye",
+        "run",
+        "semgrep",
+        "scan",
+        "--json",
+        "--config",
+        config,
+        "--disable-version-check",
+        "--metrics",
+        "off",
+        "--quiet",
+        temp_file,
+    ]
+    try:
+        out = subprocess.run(cmd, capture_output=True)
+        semgrep_res = json.loads(out.stdout.decode("utf-8"))
+    except Exception:
+        out = subprocess.run(cmd[2:], capture_output=True)
+        semgrep_res = json.loads(out.stdout.decode("utf-8"))
+    issues = []
+    for res in semgrep_res["results"]:
+        severity = self.get_severity(res["extra"]["severity"])
+        source = res["extra"]["metadata"]["source"]
+        message = res["extra"]["message"]
+        lines = res["extra"]["lines"]
+        description = f"{message} (source: {source}, lines: {lines})"
+        issues.append(CodeIssue(description=description, severity=severity))
+    return issues
 
 
 if __name__ == "__main__":
-    main()
+    mp.set_start_method("fork")
+    server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    socket_path = "/tmp/sockets/invariant.sock"
+
+    nsjail = not not os.getenv("NSJAIL", False)
+
+    if nsjail:
+        from invariant.runtime.utils.code import SemgrepDetector
+
+        SemgrepDetector.detect_all = detect_all
+
+    # Ensure the socket does not already exist
+    server_socket.bind(socket_path)
+    server_socket.listen(1024)
+
+    # pii([Message(role="user", content="test")])
+    # cache invariant functions
+    # prompt_injection([Message(role="user", content="test")])
+    # moderated([Message(role="user", content="test")])
+    # semgrep([Message(role="user", content="print(1)")], lang="python")
+
+    while True:
+        client_sock, _ = server_socket.accept()
+        process = mp.Process(target=worker, args=(client_sock,))
+        process.start()
+        client_sock.close()
