@@ -1,0 +1,170 @@
+body {
+    --highlight-color: rgba(133, 126, 255, 0.59);
+}
+
+.traceview {
+    --secondary-background-color: #f0f0f0;
+    --border-color: rgb(218, 217, 217);
+
+    display: flex;
+    flex-direction: column;
+    font-size: 12pt;
+
+    
+    .toggle-group {
+        background-color: var(--secondary-background-color);
+        display: inline-block;
+        margin: 0pt 10pt;
+        border-radius: 5pt;
+    }
+
+    h2 {
+        border-bottom: var(--border-color) 1pt solid;
+        padding-bottom: 10pt;
+
+        button {
+            margin: 0pt;
+            font-weight: normal;
+            padding: 5pt 10pt;
+
+            &:hover {
+                box-shadow: 0pt 0pt -5pt 0pt rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        button.active {
+            background-color: white;
+            border-radius: 5pt;
+            font-weight: bold;
+            border: 1pt solid var(--border-color);
+        }
+    }
+
+    .content {
+        flex: 1;
+        position: relative;
+
+        .tab {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+
+            opacity: 0.0;
+            z-index: -100;
+
+            &.active {
+                opacity: 1.0;
+                z-index: 0;
+            }
+
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+    }
+
+    .error {
+        color: red;
+        height: 100%;
+        
+        h3 {
+            font-weight: bold;
+            margin-bottom: 10pt;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            background-color: #f0f0f0;
+            text-align: left;
+            padding: 10pt;
+        }
+    }
+}
+
+.message {
+    border-radius: 5pt;
+    border: 1pt solid var(--border-color);
+    margin: 5pt 0pt;
+    overflow: hidden;
+
+    .content {
+        padding: 5pt;
+        line-break: anywhere;
+    }
+
+    .content.tool {
+        font-family: monospace;
+        font-size: 1.1em;
+        white-space: pre-wrap;
+    }
+
+    .role {
+        background-color: rgb(244, 244, 244);
+        border-bottom: 1pt solid var(--border-color);
+        padding: 4pt 5pt;
+        text-transform: uppercase;
+        font-weight: bold;
+        font-size: 0.8em;
+        user-select: none;
+        -webkit-user-select: none;
+        cursor: default;
+        color: rgba(0, 0, 0, 0.587);
+        font-size: 0.7em;
+
+        &.seamless {
+            border-bottom: none;
+        }
+    }
+
+    .tool-calls:not(.seamless) {
+        border-top: 1pt solid var(--border-color);
+    }
+
+    .tool-call {
+        .function-name {
+            padding: 5pt;
+            font-family: monospace;
+            background-color: rgb(244, 244, 244);
+            border-bottom: 1pt solid var(--border-color);
+        }
+
+        .arguments {
+            padding: 5pt;
+        }
+    }
+
+    span.annotated {
+        background-color: var(--highlight-color);
+        padding-right: 0pt;
+        border-radius: 2pt;
+        position: relative;
+
+        div.annotations {
+            display: none;
+            position: absolute;
+            background-color: white;
+            top: calc(100% + 5pt);
+            left: 0pt;
+            min-width: 200pt;
+            border: 1pt solid var(--border-color);
+            padding: 5pt;
+            border-radius: 5pt;
+            z-index: 100;
+        }
+
+        &:hover {
+            div.annotations {
+                display: block;
+            }
+        }
+    }
+}
+
+.view-overlays {
+    div.highlight {
+        background-color: var(--highlight-color);
+        box-shadow: 0pt 0pt 1pt 0pt rgba(0, 0, 0, 0.5);
+        border-radius: 1pt;
+    }
+}

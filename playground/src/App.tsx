@@ -6,6 +6,7 @@ import Editor from "@monaco-editor/react";
 import InvariantLogoIcon from "@/assets/logo";
 import Examples from "@/components/Examples";
 import examples from "@/examples";
+import { TraceView } from "./components/ui/traceview";
 
 const App = () => {
   const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[0].policy);
@@ -164,10 +165,7 @@ const App = () => {
           <ResizablePanel className="flex-1 bg-gray-100 p-4 overflow-y-auto">
             <ResizablePanelGroup direction="vertical">
               <ResizablePanel className="flex-1 flex flex-col">
-                <div className="bg-white p-4 shadow rounded mb-4 flex-1 flex flex-col">
-                  <h2 className="font-bold mb-2">INPUT</h2>
-                  <Editor defaultLanguage="json" value={inputData} onChange={handleInputChange} height="100%" theme="vs-light" />
-                </div>
+                <TraceView inputData={inputData} handleInputChange={handleInputChange} />
               </ResizablePanel>
 
               <ResizableHandle className="h-2 bg-gray-300 hover:bg-gray-500" />
