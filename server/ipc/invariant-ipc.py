@@ -16,6 +16,8 @@ from typing import List, Dict
 def analyze(policy: str, traces: List[Dict]):
     policy = Policy.from_string(policy)
     analysis_result = policy.analyze(traces)
+    for e in analysis_result.errors:
+        print(e)
     return {
         "errors": [repr(error) for error in analysis_result.errors],
         "handled_errors": [

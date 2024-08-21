@@ -1,70 +1,143 @@
 import IntervalTree from '@flatten-js/interval-tree'
 import jsonMap from "json-source-map"
 
-interface Annotation {
+/** A single annotation, with a start and end offset in the source text or leaf string, and a content field. */
+export interface Annotation {
     start: number
     end: number
     content: any
 }
 
+/** Like a regular annotation, but stores a list of annotations per range. */
+export interface GroupedAnnotation {
+    start: number
+    end: number
+    content: Annotation[] | null
+}
+
+
+/** Hierarchical representation of annotations like 
+ * { a: { b: { c: { $annotations: [ { start: 0, end: 5, content: "annotation" } ] } } } }
+ */
 interface AnnotationMap {
     $annotations: Annotation[]
     [key: string]: any
 }
 
+/** Returns an empty annotation map. */
+function empty(): AnnotationMap {
+    return { $annotations: [] }
+}
+
+/**
+ * Tracks annotations of an arbitrary JSON object, and provides methods to extract annotations for a given path.
+ * 
+ * Use `AnnotatedJSON.from_mappings` to create an instance from a list of annotations as shown below.
+ */
 export class AnnotatedJSON {
     data: any
     annotationsMap: AnnotationMap
 
-    constructor(data: any, annotations: Annotation[] | AnnotationMap) {
-        this.data = data
-        
-        if (Array.isArray(annotations)) {
-            this.annotationsMap = annotationsToMap(annotations)
-        } else {
-            this.annotationsMap = annotations as AnnotationMap
-        }
+    constructor(annotations: AnnotationMap) {
+        this.annotationsMap = annotations as AnnotationMap
     }
 
-    subannotations(path: string) {
+    /**
+     * Returns a new AnnotatedJSON object that represents the annotations for the given path in the annotated object.
+     * 
+     * E.g. if the annotated object is: `{a: {b: {c: 1, d: 2}}}` and the annotations are [{key: "a.b.c:0-5", value: "annotation1"}],
+     * then `for_path("a.b")` will return a new AnnotatedJSON object with annotations [{key: "c:0-5", value: "annotation1"}].
+     */
+    for_path(path: string): AnnotatedJSON {
         if (!this.annotationsMap) {
-            return new AnnotatedJSON({}, [])
+            return new AnnotatedJSON(empty())
         }
     
         let tree = this.annotationsMap
-        let dataPointer = this.data
 
         for (const key of path.split('.')) {
             if (!tree[key]) {
-                return {}
+                return new AnnotatedJSON(empty())
             }
             tree = tree[key]
-            dataPointer = dataPointer[key] || {}
         }
     
-        return new AnnotatedJSON(dataPointer, getAnnotations(tree))
+        return new AnnotatedJSON(tree)
     }
 
-    get annotations() {
-        if (!this.annotationsMap) {
-            return []
-        }
-        if (!this.annotationsMap["$annotations"]) {
-            return []
-        }
-        
-        return this.annotationsMap["$annotations"]
+    /**
+     * Creates an AnnotatedJSON object from a list of key-value pairs, where the key is the path to the annotation
+     * 
+     * Use `from_mappings` to create an instance from a list of annotations like so:
+     * 
+     * ```typescript
+     * const annotations = {
+     *    "key1:0-5": "annotation1",    
+     *   "key1.key2:0-5": "annotation2",
+     *  "key1.key2.key3:0-5": "annotation3"
+     * }
+     * const annotated = AnnotatedJSON.from_mappings(annotations)
+     * ```
+     * 
+     */
+    static from_mappings(mappings: Record<string, string>) {
+        let annotationsMap = annotationsToMap(mappings)
+        return new AnnotatedJSON(annotationsMap)
     }
 
-    
+    /**
+     * Returns the annotations referenced by this annotation tree, as a list of {start, end, content} objects
+     * relative to the provided object string representation (e.g. JSON string of the annotated object).
+     */
+    in_text(object_string: string): Annotation[] {
+        // extract source map pointers
+        const map = jsonMap.parse(object_string)
+        const pointers = []
+        for (const key in map.pointers) {
+            const pointer = map.pointers[key]
+            // in case, we map to a string, we offset the start and end by 1 to exclude the quotes
+            let isDoubleQuote = object_string[pointer.value.pos] === '"'
+            pointers.push({ 
+                start: pointer.value.pos + (isDoubleQuote ? 1 : 0),
+                end: pointer.value.end + (isDoubleQuote ? -1 : 0),
+                content: key 
+            })
+        }
+
+        // construct source range map (maps object properties to ranges in the object string)
+        let srm = sourceRangesToMap(pointers)
+
+        // return annotations with text offsets
+        return to_text_offsets(this.annotationsMap, srm)
+    }
+
+    /**
+     * Turns a list of annotations into a list of fully separated intervals, where the list of
+     * returned intervals is guaranteed to have no overlaps between each other and the 'content' field contains
+     * the list of item contents that overlap in that interval.
+     */
+    static disjunct(annotations: Annotation[]): GroupedAnnotation[] {
+        return disjunct_overlaps(annotations)
+    }
 }
 
 /**
  * Turns a list of {start, end, content} items into a list of fully separated intervals, where the list of
  * returned intervals is guaranteed to have no overlaps between each other and the 'content' field contains
  * the list of item contents that overlap in that interval.
+ * 
+ * E.g. turns these overlapping intervals:
+ * 
+ * |--A-----|
+ *    |--B------|
+ * |----C----------|
+ *                  
+ * into these disjunct intervals:
+ *                  
+ * |AC|-ABC-|BC-|-C|
+ *                  
  */
-function disjunct_overlaps(items: { start: number, end: number, content: any }[]) {
+function disjunct_overlaps(items: { start: number, end: number, content: any }[]): GroupedAnnotation[] {
     // create interval tree for efficient interval queries
     const tree = new IntervalTree()
 
@@ -87,7 +160,7 @@ function disjunct_overlaps(items: { start: number, end: number, content: any }[]
     boundaries = boundaries.sort((a, b) => a - b)
     
     // construct fully separated intervals, by querying all intervals between each checkpoint
-    const disjunct = []
+    const disjunct: GroupedAnnotation[] = []
     for (let i = 0; i < boundaries.length - 1; i++) {
         const start = boundaries[i]
         const end = boundaries[i + 1]
@@ -104,10 +177,11 @@ function disjunct_overlaps(items: { start: number, end: number, content: any }[]
 }
 
 
-
+/** 
+ * Organizes a sequential list of source map ranges of format {start, end, content: /0/tool_calls/0/function/arguments} into a hierarchical map
+ * of format { 0: { tool_calls: { 0: { function: { arguments: [ { start, end, content } ] } } } } }
+ */
 function sourceRangesToMap(ranges: { start: number, end: number, content: string }[]) {
-    // organizes a sequential list of source map ranges of format {start, end, content: /0/tool_calls/0/function/arguments} into a hierarchical map
-    // of format { 0: { tool_calls: { 0: { function: { arguments: [ { start, end, content } ] } } } } }
     const map: Record<string, any> = {}
     let last_range = null;
 
@@ -118,7 +192,17 @@ function sourceRangesToMap(ranges: { start: number, end: number, content: string
         if (last_range && !last_range.end) {
             last_range.end = range.start
         }
-        
+
+        // handle root level annotations
+        if (parts.length === 1 && parts[0] === "") {
+            if (!current["$annotations"]) {
+                current["$annotations"] = []
+            }
+            last_range = { start: range.start, end: range.end, content: range.content }
+            current["$annotations"].push(last_range)
+            continue
+        }
+
         for (let i = 0; i < parts.length; i++) {
             let part: any = parts[i]
 
@@ -150,9 +234,7 @@ function sourceRangesToMap(ranges: { start: number, end: number, content: string
  * 
  * Returns the flattened list of annotations, with start and end offsets adjusted to the actual text offsets.
  */
-function to_text_offsets(annotationMap: any, sourceRangeMap: any, located_annotations: any[] = []) {
-    console.log(sourceRangeMap)
-
+function to_text_offsets(annotationMap: any, sourceRangeMap: any, located_annotations: any[] = []): Annotation[] {
     for (let key of Object.keys(annotationMap)) {
         if (key === "$annotations") {
             annotationMap[key].forEach((a: any) => {
@@ -173,17 +255,13 @@ function to_text_offsets(annotationMap: any, sourceRangeMap: any, located_annota
         }
     }
 
-    // make located annotations unique (by content)
-    located_annotations = located_annotations.filter((a, index, self) => self.findIndex((b) => b.content === a.content) === index)
-
     return located_annotations
 
 }
 
-
+// turns a list of 'key.index.prop:start-end' strings into a map of { key: { index: { prop: { $annotations: [ { start: start, end: end, content: content } ] } } } }
+// this makes annotations easier to work with in the UI, as they are grouped by key, index, and prop
 function annotationsToMap(annotations: Record<string, any>, prefix = ""): AnnotationMap {
-    // turns a list of 'key.index.prop:start-end' strings into a map of { key: { index: { prop: { $annotations: [ { start: start, end: end, content: content } ] } } } }
-    // this makes annotations easier to work with in the UI, as they are grouped by key, index, and prop
 
     const map: AnnotationMap = { $annotations: [] }
     const annotationsPerKey: Record<string, Record<string, any>> = {}
@@ -233,31 +311,4 @@ function annotationsToMap(annotations: Record<string, any>, prefix = ""): Annota
     }
 
     return map
-}
-
-function getAnnotations(annotationTree: any) {
-    if (!annotationTree) {
-        return []
-    }
-    if (!annotationTree["$annotations"]) {
-        return []
-    }
-    
-    return annotationTree["$annotations"]
-}
-
-function subannotations(annotationTree: any, path: string): any {
-    if (!annotationTree) {
-        return {}
-    }
-
-    let tree = annotationTree
-    for (const key of path.split('.')) {
-        if (!tree[key]) {
-            return {}
-        }
-        tree = tree[key]
-    }
-
-    return tree
 }
