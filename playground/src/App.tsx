@@ -12,7 +12,18 @@ import { Base64 } from "js-base64";
 
 function clearTerminalControlCharacters(str: string) {
   // remove control characters like [31m
+  // eslint-disable-next-line no-control-regex
   return str.replace(/\u001b\[\d+m/g, "");
+}
+
+interface AnalysisResult {
+  errors: Error[];
+  handled_errors: Error[];
+}
+
+interface Error {
+  error: string;
+  ranges: string[];
 }
 
 const App = () => {
@@ -85,24 +96,24 @@ const App = () => {
         body: JSON.stringify({ trace: JSON.parse(inputData), policy: policyCode }),
       });
 
-      const analyzeData = await analyzeResponse.json();
+      const analysisResult: string | AnalysisResult = await analyzeResponse.json();
       
       // check for error messages
-      if (typeof analyzeData !== "object") {
-        setOutput(clearTerminalControlCharacters(analyzeData));
+      if (typeof analysisResult === "string") {
+        setOutput(clearTerminalControlCharacters(analysisResult));
         setRanges({});
         setLoading(false);
         return;
       }
 
       const annotations: Record<string, string> = {};
-      analyzeData.errors.forEach((e: any) => {
-        e.ranges.forEach((r: any) => {
+      analysisResult.errors.forEach((e: Error) => {
+        e.ranges.forEach((r: string) => {
           annotations[r] = e["error"]
         })
       })
       setRanges(annotations);
-      setOutput(JSON.stringify(analyzeData, null, 2));
+      setOutput(JSON.stringify(analysisResult, null, 2));
     } catch (error) {
       console.error("Failed to evaluate policy:", error);
       setRanges({});
