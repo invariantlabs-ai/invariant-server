@@ -17,9 +17,11 @@ interface ExamplesProps {
 
 const Examples: React.FC<ExamplesProps> = ({ examples, onSelect }) => {
   const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("Examples");
 
   const handleSelect = (exampleIndex: number) => {
     onSelect(exampleIndex);
+    setTitle(examples[exampleIndex].name); // Update the title when an item is selected
     setOpen(false); // Close the Popover when an item is selected
   };
 
@@ -27,7 +29,8 @@ const Examples: React.FC<ExamplesProps> = ({ examples, onSelect }) => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button className="flex items-center bg-white text-black px-4 py-2 border rounded hover:bg-gray-100">
-          Examples <ChevronDown className="ml-2 h-4 w-4" />
+          {title}
+          <ChevronDown className="ml-2 h-4 w-4" />
         </button>
       </PopoverTrigger>
       <PopoverContent className="p-2">

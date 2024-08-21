@@ -105,14 +105,6 @@ export function TraceEditor(props: { inputData: string, handleInputChange: (valu
     }} />
 }
 
-/**
- * Uses JSON parse, but support JS comments.
- */
-function parseTrace(trace: string) {
-    return JSON.parse(trace.replace(/\/\/.*/g, ""))
-}
-
-
 // handles exceptions in the rendering pass, gracefully
 export class RenderedTrace extends React.Component<{ trace: any, annotations: any }, { error: Error | null, parsed: any | null, traceString: string }> {
     constructor(props: { trace: any, annotations: any }) {
@@ -133,7 +125,7 @@ export class RenderedTrace extends React.Component<{ trace: any, annotations: an
     parse() {
         if (this.state.traceString !== this.props.trace) {
             try {
-                this.setState({ parsed: parseTrace(this.props.trace), error: null, traceString: this.props.trace })
+                this.setState({ parsed: JSON.parse(this.props.trace), error: null, traceString: this.props.trace })
             } catch (e) {
                 this.setState({ error: e as Error, parsed: null, traceString: this.props.trace })
             }
@@ -200,7 +192,7 @@ class MessageView extends React.Component<{ message: any, index: number, annotat
             if (!message.role) {
                 // top-level tool call
                 if (message.type == "function") {
-                    return <div className={"message " + (isHighlighted ? "highlight" : "")}>
+                    return <div className="message">
                         <div className="role seamless"> Assistant </div>
                         <div className="tool-calls seamless">
                             <ToolCallView tool_call={message} annotations={this.props.annotations} />
@@ -320,6 +312,8 @@ function ToolCallView(props: { tool_call: any, annotations: any }) {
     const f = tool_call.function
     let args = f.arguments;
 
+    const isHighlighted = annotations.rootAnnotations.length
+
     // format args as error message if undefined
     if (typeof args === "undefined") {
         args = <span className="error">No .arguments field found</span>
@@ -332,7 +326,7 @@ function ToolCallView(props: { tool_call: any, annotations: any }) {
     // translate annotations on arguments back into JSON source ranges
     const argumentAnnotations = annotations.for_path("function.arguments")
 
-    return <div className="tool-call">
+    return <div className={"tool-call " + (isHighlighted ? "highlight" : "")}>
         <div className="function-name">
             <Annotated annotations={annotations.for_path("function.name")}>
                 {f.name || <span className="error">Could Not Parse Function Name</span>}

@@ -197,6 +197,10 @@ body {
         .arguments {
             padding: 5pt;
         }
+
+        &.highlight {
+            background-color: var(--highlight-message);
+        }
     }
 
     span.annotated {

@@ -6,7 +6,7 @@ import Editor from "@monaco-editor/react";
 import InvariantLogoIcon from "@/assets/logo";
 import Examples from "@/components/Examples";
 import examples from "@/examples";
-import { TraceView } from "./components/ui/traceview";
+import { TraceView } from "./components/traceview/traceview";
 
 function clearTerminalControlCharacters(str: string) {
   // remove control characters like [31m
@@ -37,6 +37,8 @@ const App = () => {
         if (decodedData.policy && decodedData.input) {
           setPolicyCode(decodedData.policy);
           setInputData(decodedData.input);
+          setOutput("");
+          setRanges({});
           localStorage.setItem("policy", decodedData.policy);
           localStorage.setItem("input", decodedData.input);
         }
@@ -130,6 +132,8 @@ const App = () => {
 
     const selectedExample = examples[exampleIndex];
     setPolicyCode(selectedExample.policy);
+    setOutput("");
+    setRanges({});
     setInputData(selectedExample.input);
     localStorage.setItem("policy", selectedExample.policy);
     localStorage.setItem("input", selectedExample.input);
