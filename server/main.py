@@ -1,13 +1,41 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from server.routers import policy, monitor
+from server.ipc.controller import get_ipc_controller
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+from contextlib import asynccontextmanager
+import hashlib
+
+
+class HashRequestBodyMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        body = await request.body()
+        # Calculate the hash of the request body
+        body_hash = hashlib.blake2b(body).hexdigest()
+
+        # Add the hash to the request state
+        request.state.body_hash = body_hash
+
+        # Proceed with the request
+        response = await call_next(request)
+        return response
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ipc = get_ipc_controller()
+    yield
+    ipc.close()
 
 
 app = FastAPI(
     title="Invariant API",
     summary="REST API Server made to run Invariant policies remotely.",
     version="0.1.0",
+    lifespan=lifespan,
 )
+
+app.add_middleware(HashRequestBodyMiddleware)
 
 app.include_router(policy.router, prefix="/api/policy", tags=["policy"])
 app.include_router(monitor.router, prefix="/api/monitor", tags=["monitor"])

@@ -3,7 +3,9 @@ import sys
 import json
 import os
 from server.config import settings
-import socket
+import asyncio
+import psutil
+import time
 
 
 class IpcController:
@@ -16,26 +18,53 @@ class IpcController:
         return cls._instance
 
     def _init(self):
+        self.socket_path = "/tmp/sockets/invariant.sock"
+        os.makedirs("/tmp/sockets", exist_ok=True)
         self.start_process()
-        self.host = "127.0.0.1"
-        self.port = 9999
 
-    def request(self, message):
-        p = self.process.poll()
-        if p is not None:
+    def exists(self):
+        if not os.path.exists(self.socket_path):
+            self.close()
+            return False
+
+        if settings.production:
+            return True
+
+        process = False
+        for proc in psutil.process_iter():
+            try:
+                cmdline = proc.cmdline()
+                for cmd in cmdline:
+                    if "invariant-ipc.py" in cmd:
+                        process = True
+                        break
+                if process:
+                    break
+            except (psutil.AccessDenied, psutil.ZombieProcess, psutil.NoSuchProcess):
+                continue
+
+        return process and os.path.exists(self.socket_path)
+
+    async def request(self, message):
+        if not self.exists():
             self.start_process()
 
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect((self.host, self.port))
+        reader, writer = await asyncio.open_unix_connection(self.socket_path)
+        writer.write(json.dumps(message).encode())
+        await writer.drain()
 
-        client_socket.send(json.dumps(message).encode())
+        response = await reader.read(10 * 1024 * 1024)
 
-        response = client_socket.recv(10 * 1024 * 1024)
-        client_socket.close()
+        writer.close()
+        await writer.wait_closed()
 
         return json.loads(response.decode())
 
     def start_process(self):
+        # Remove existing socket file if it exists
+        if os.path.exists(self.socket_path):
+            os.remove(self.socket_path)
+
         if settings.production:
             # This is only meant to be used in the production Docker container
             self.process = subprocess.Popen(
@@ -53,8 +82,22 @@ class IpcController:
                 [sys.executable, os.path.abspath(__file__ + "/../invariant-ipc.py")]
             )
 
+        while not os.path.exists(self.socket_path):
+            time.sleep(0.1)
+
     def close(self):
-        self.process.terminate()
+        # Kill any existing process using the Unix socket
+        for proc in psutil.process_iter():
+            try:
+                cmdline = proc.cmdline()
+                for cmd in cmdline:
+                    if "invariant-ipc.py" in cmd:
+                        proc.kill()
+                        break
+            except (psutil.AccessDenied, psutil.ZombieProcess, psutil.NoSuchProcess):
+                continue
+        if os.path.exists(self.socket_path):
+            os.remove(self.socket_path)
 
 
 class IpcControllerSingleton:
