@@ -6,7 +6,6 @@
 #   features: []
 #   all-features: false
 #   with-sources: false
-#   generate-hashes: false
 
 -e file:.
 annotated-types==0.7.0
@@ -68,6 +67,8 @@ dnspython==2.6.1
 email-validator==2.2.0
     # via fastapi
 exceptiongroup==1.2.1
+    # via anyio
+    # via pytest
     # via semgrep
 face==22.0.0
     # via glom
@@ -109,7 +110,7 @@ idna==3.7
     # via tldextract
 iniconfig==2.0.0
     # via pytest
-invariant @ git+https://github.com/invariantlabs-ai/invariant.git@9edf9881bbabdd4461104492074a985043e6ac3b
+invariant @ git+https://github.com/invariantlabs-ai/invariant.git@0a5489d3e647858a78f62a8f5abef2b79374ab0b
     # via invariant-server
 jinja2==3.1.4
     # via fastapi
@@ -235,7 +236,6 @@ setuptools==70.3.0
     # via marisa-trie
     # via spacy
     # via thinc
-    # via torch
 shellingham==1.5.4
     # via typer
 smart-open==7.0.4
@@ -268,6 +268,7 @@ tldextract==5.1.2
 tokenizers==0.19.1
     # via transformers
 tomli==2.0.1
+    # via pytest
     # via semgrep
 torch==2.4.0
     # via invariant-server
@@ -282,6 +283,8 @@ typer==0.12.3
     # via spacy
     # via weasel
 typing-extensions==4.12.2
+    # via anyio
+    # via cloudpathlib
     # via fastapi
     # via huggingface-hub
     # via pydantic
@@ -290,6 +293,7 @@ typing-extensions==4.12.2
     # via torch
     # via typer
     # via typing-inspect
+    # via uvicorn
 typing-inspect==0.9.0
     # via invariant-server
 ujson==5.10.0

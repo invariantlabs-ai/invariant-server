@@ -6,14 +6,23 @@ import Editor from "@monaco-editor/react";
 import InvariantLogoIcon from "@/assets/logo";
 import Examples from "@/components/Examples";
 import examples from "@/examples";
+import { TraceView } from "./components/traceview/traceview";
+
+function clearTerminalControlCharacters(str: string) {
+  // remove control characters like [31m
+  return str.replace(/\u001b\[\d+m/g, "");
+}
 import { Base64 } from "js-base64";
 
 const App = () => {
   const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[0].policy);
   const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || examples[0].input);
-  const [output, setOutput] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
+  
+  // output and ranges
+  const [loading, setLoading] = useState<boolean>(false);
+  const [output, setOutput] = useState<string>("");
+  const [ranges, setRanges] = useState<Record<string, string>>({});
 
   const isDigit = (str: string) => {
     return /^\d+$/.test(str);
@@ -29,6 +38,8 @@ const App = () => {
         if (decodedData.policy && decodedData.input) {
           setPolicyCode(decodedData.policy);
           setInputData(decodedData.input);
+          setOutput("");
+          setRanges({});
           localStorage.setItem("policy", decodedData.policy);
           localStorage.setItem("input", decodedData.input);
         }
@@ -57,6 +68,7 @@ const App = () => {
   const handleEvaluate = async () => {
     setLoading(true); // Start loading
     setOutput(""); // Clear previous output
+    setRanges({}); // Clear previous ranges
 
     try {
       // Save policy and input to localStorage
@@ -73,13 +85,26 @@ const App = () => {
       });
 
       const analyzeData = await analyzeResponse.json();
-      if (typeof analyzeData === "string") {
-        setOutput(analyzeData);
-      } else {
-        setOutput(JSON.stringify(analyzeData, null, 2));
+      
+      // check for error messages
+      if (typeof analyzeData !== "object") {
+        setOutput(clearTerminalControlCharacters(analyzeData));
+        setRanges({});
+        setLoading(false);
+        return;
       }
+
+      const annotations: Record<string, string> = {};
+      analyzeData.errors.forEach((e: any) => {
+        e.ranges.forEach((r: any) => {
+          annotations[r] = e["error"]
+        })
+      })
+      setRanges(annotations);
+      setOutput(JSON.stringify(analyzeData, null, 2));
     } catch (error) {
       console.error("Failed to evaluate policy:", error);
+      setRanges({});
       setOutput("An error occurred during evaluation. Please check browser console for details.");
     } finally {
       setLoading(false); // End loading
@@ -108,6 +133,8 @@ const App = () => {
 
     const selectedExample = examples[exampleIndex];
     setPolicyCode(selectedExample.policy);
+    setOutput("");
+    setRanges({});
     setInputData(selectedExample.input);
     localStorage.setItem("policy", selectedExample.policy);
     localStorage.setItem("input", selectedExample.input);
@@ -162,13 +189,10 @@ const App = () => {
 
           <ResizableHandle className="w-2 bg-gray-300 hover:bg-gray-500" />
 
-          <ResizablePanel className="flex-1 bg-gray-100 p-4 overflow-y-auto">
+          <ResizablePanel className="flex-1">
             <ResizablePanelGroup direction="vertical">
               <ResizablePanel className="flex-1 flex flex-col">
-                <div className="bg-white p-4 shadow rounded mb-4 flex-1 flex flex-col">
-                  <h2 className="font-bold mb-2">INPUT</h2>
-                  <Editor defaultLanguage="json" value={inputData} onChange={handleInputChange} height="100%" theme="vs-light" />
-                </div>
+                <TraceView inputData={inputData} handleInputChange={handleInputChange} annotations={ranges}/>
               </ResizablePanel>
 
               <ResizableHandle className="h-2 bg-gray-300 hover:bg-gray-500" />
