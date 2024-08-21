@@ -1,18 +1,26 @@
 body {
-    --highlight-color: rgba(133, 126, 255, 0.59);
+    --highlight-color: rgba(132, 126, 255, 0.445);
+    --highlight-message: rgba(132, 126, 255, 0.225);
 }
 
 .traceview {
-    --secondary-background-color: #f0f0f0;
+    --secondary-background-color: #f0f0f097;
     --border-color: rgb(218, 217, 217);
 
     display: flex;
     flex-direction: column;
     font-size: 12pt;
+    min-height: 0pt;
+    max-height: 100%;
+    flex: 1;
+    background-color: var(--secondary-background-color);
+    padding: 5pt;
+    padding-top: 10pt;
 
     
     .toggle-group {
-        background-color: var(--secondary-background-color);
+        background-color: rgba(0, 0, 0, 0.01);
+        border: 1pt solid var(--border-color);
         display: inline-block;
         margin: 0pt 10pt;
         border-radius: 5pt;
@@ -21,14 +29,29 @@ body {
     h2 {
         border-bottom: var(--border-color) 1pt solid;
         padding-bottom: 10pt;
+        margin-left: 5pt;
 
         button {
             margin: 0pt;
             font-weight: normal;
-            padding: 5pt 10pt;
+            padding: 1pt 2pt;
+            cursor: pointer;
 
             &:hover {
                 box-shadow: 0pt 0pt -5pt 0pt rgba(0, 0, 0, 0.1);
+            }
+
+            .inner {
+                margin: 1pt 2pt;
+                display: inline-block;
+                padding: 2pt 6pt;
+                border-radius: 3pt;
+                transition: background-color 0.2s;
+                background-color: transparent;
+
+                &:hover {
+                    background-color: rgba(0, 0, 0, 0.05);
+                }
             }
         }
 
@@ -37,6 +60,11 @@ body {
             border-radius: 5pt;
             font-weight: bold;
             border: 1pt solid var(--border-color);
+            transform: scale(1.05);
+
+            .inner {
+                background: transparent;
+            }
         }
     }
 
@@ -64,6 +92,24 @@ body {
         }
     }
 
+    .sidebyside {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        max-height: calc(100% - 50pt);
+        min-height: auto;
+
+        .side {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        .side:first-of-type {
+            margin-right: 5pt;
+        }
+    }
+
     .error {
         color: red;
         height: 100%;
@@ -85,12 +131,32 @@ body {
 .message {
     border-radius: 5pt;
     border: 1pt solid var(--border-color);
+    background-color: white;
     margin: 5pt 0pt;
-    overflow: hidden;
+
+    &.parser-error {
+        border: 1pt solid darkred;
+    }
+
+    .content.error {
+        padding: 0pt;
+
+        p {
+            padding: 5pt;
+        }
+    }
 
     .content {
         padding: 5pt;
-        line-break: anywhere;
+        // break anywhere if needed, otherwise break at word
+        word-break: break-word;
+        white-space: pre-wrap;
+    }
+
+    &.highlight {
+        // highlight color as background by at 0.1 opacity
+        background-color: var(--highlight-message);
+        border: 1pt solid var(--highlight-color);
     }
 
     .content.tool {
@@ -100,7 +166,6 @@ body {
     }
 
     .role {
-        background-color: rgb(244, 244, 244);
         border-bottom: 1pt solid var(--border-color);
         padding: 4pt 5pt;
         text-transform: uppercase;
@@ -143,14 +208,28 @@ body {
         div.annotations {
             display: none;
             position: absolute;
-            background-color: white;
-            top: calc(100% + 5pt);
+            background-color: rgba(255, 255, 255, 0.402);
+            backdrop-filter: blur(5pt);
+            top: calc(100%);
             left: 0pt;
-            min-width: 200pt;
+            min-width: 500pt;
+            overflow: visible;
+            word-break: break-word;
+            white-space: pre-wrap;
             border: 1pt solid var(--border-color);
             padding: 5pt;
             border-radius: 5pt;
             z-index: 100;
+        }
+
+        div.annotations:before {
+            content: "";
+            position: absolute;
+            top: -40pt;
+            width: 300pt;
+            height: 40pt;
+            background-color: transparent;
+            display: block;
         }
 
         &:hover {
@@ -167,4 +246,13 @@ body {
         box-shadow: 0pt 0pt 1pt 0pt rgba(0, 0, 0, 0.5);
         border-radius: 1pt;
     }
+
+    div.light.highlight {
+        opacity: 0.4; 
+    }
+}
+
+.traces {
+    padding-bottom: 130pt;
+    padding-right: 2pt;
 }

@@ -6,6 +6,10 @@ export interface Annotation {
     start: number
     end: number
     content: any
+    
+    // specifies whether this annotation is range specific, or marks a higher-level
+    // range like an entire object
+    specific?: boolean
 }
 
 /** Like a regular annotation, but stores a list of annotations per range. */
@@ -65,6 +69,10 @@ export class AnnotatedJSON {
         return new AnnotatedJSON(tree)
     }
 
+    get rootAnnotations(): Annotation[] {
+        return this.annotationsMap.$annotations || []
+    }
+
     /**
      * Creates an AnnotatedJSON object from a list of key-value pairs, where the key is the path to the annotation
      * 
@@ -87,28 +95,37 @@ export class AnnotatedJSON {
 
     /**
      * Returns the annotations referenced by this annotation tree, as a list of {start, end, content} objects
-     * relative to the provided object string representation (e.g. JSON string of the annotated object).
+     * relative to the provided object string representation (e.g. JSON representation of the annotated object).
+     * 
+     * Uses JSON source maps internally, to point from an annotation into the object string. This means the object string
+     * must be valid JSON.
      */
     in_text(object_string: string): Annotation[] {
         // extract source map pointers
-        const map = jsonMap.parse(object_string)
-        const pointers = []
-        for (const key in map.pointers) {
-            const pointer = map.pointers[key]
-            // in case, we map to a string, we offset the start and end by 1 to exclude the quotes
-            let isDoubleQuote = object_string[pointer.value.pos] === '"'
-            pointers.push({ 
-                start: pointer.value.pos + (isDoubleQuote ? 1 : 0),
-                end: pointer.value.end + (isDoubleQuote ? -1 : 0),
-                content: key 
-            })
+        try {
+            const map = jsonMap.parse(object_string)
+                
+            const pointers = []
+            for (const key in map.pointers) {
+                const pointer = map.pointers[key]
+                // in case, we map to a string, we offset the start and end by 1 to exclude the quotes
+                let isDoubleQuote = object_string[pointer.value.pos] === '"'
+                pointers.push({ 
+                    start: pointer.value.pos + (isDoubleQuote ? 1 : 0),
+                    end: pointer.valueEnd.pos + (isDoubleQuote ? -1 : 0),
+                    content: key 
+                })
+            }
+
+            // construct source range map (maps object properties to ranges in the object string)
+            let srm = sourceRangesToMap(pointers, object_string.length)
+
+            // return annotations with text offsets
+            return to_text_offsets(this.annotationsMap, srm)
+        } catch (e) {
+            console.error("Failed to parse source map", e)
+            return []
         }
-
-        // construct source range map (maps object properties to ranges in the object string)
-        let srm = sourceRangesToMap(pointers)
-
-        // return annotations with text offsets
-        return to_text_offsets(this.annotationsMap, srm)
     }
 
     /**
@@ -118,6 +135,10 @@ export class AnnotatedJSON {
      */
     static disjunct(annotations: Annotation[]): GroupedAnnotation[] {
         return disjunct_overlaps(annotations)
+    }
+
+    static empty(): AnnotatedJSON {
+        return new AnnotatedJSON(empty())
     }
 }
 
@@ -181,25 +202,20 @@ function disjunct_overlaps(items: { start: number, end: number, content: any }[]
  * Organizes a sequential list of source map ranges of format {start, end, content: /0/tool_calls/0/function/arguments} into a hierarchical map
  * of format { 0: { tool_calls: { 0: { function: { arguments: [ { start, end, content } ] } } } } }
  */
-function sourceRangesToMap(ranges: { start: number, end: number, content: string }[]) {
+function sourceRangesToMap(ranges: { start: number, end: number, content: string }[], document_length: number): Record<string, any> {
     const map: Record<string, any> = {}
-    let last_range = null;
 
     for (const range of ranges) {
         const parts = range.content.substring(1).split('/')
         let current = map
-        
-        if (last_range && !last_range.end) {
-            last_range.end = range.start
-        }
 
         // handle root level annotations
         if (parts.length === 1 && parts[0] === "") {
             if (!current["$annotations"]) {
                 current["$annotations"] = []
             }
-            last_range = { start: range.start, end: range.end, content: range.content }
-            current["$annotations"].push(last_range)
+            let new_range = { start: range.start, end: range.end, content: range.content }
+            current["$annotations"].push(new_range)
             continue
         }
 
@@ -214,8 +230,8 @@ function sourceRangesToMap(ranges: { start: number, end: number, content: string
                     current[part]["$annotations"] = []
                 }
                 
-                last_range = { start: range.start, end: range.end, content: range.content }
-                current[part]["$annotations"].push(last_range)
+                let new_range = { start: range.start, end: range.end, content: range.content }
+                current[part]["$annotations"].push(new_range)
             } else {
                 if (!current[part]) {
                     current[part] = {}
@@ -225,8 +241,40 @@ function sourceRangesToMap(ranges: { start: number, end: number, content: string
         }
     }
 
-    return map
+    return map;
 }
+
+function contained(sourceRanges: any): number {
+    let end_values = []
+
+    for (let key of Object.keys(sourceRanges)) {
+        if (key === "$annotations") {
+            sourceRanges[key].map((a: any) => a.end).filter((e: any) => !isNaN(e)).forEach((e: any) => {
+                end_values.push(e)
+            })
+        } else {
+            let children_max_end = contained(sourceRanges[key])
+            if (!isNaN(children_max_end)) {
+                end_values.push(children_max_end)
+            }
+        }
+    }
+
+    if (end_values.length > 0) {
+        let max_end = Math.max(...end_values)
+        if (isNaN(max_end)) { max_end = 0 }
+
+        if (sourceRanges.$annotations) {
+            sourceRanges.$annotations.forEach((a: any) => {
+                a.end = max_end
+            })
+        }
+        return max_end
+    } else {
+        return 0;
+    }
+}
+
 
 /**
  * Returns the list of annotations as mapped out by the annotationMap, such that start and end offsets 
@@ -240,10 +288,14 @@ function to_text_offsets(annotationMap: any, sourceRangeMap: any, located_annota
             annotationMap[key].forEach((a: any) => {
                 // a["start"] += sourceRangeMap[key][0]["start"]
                 // a["end"] += sourceRangeMap[key][0]["start"]
+                let end = a["end"] !== null ? a["end"] + sourceRangeMap[key][0]["start"] : sourceRangeMap[key][0]["end"]
+                let start = a["start"] !== null ? a["start"] + sourceRangeMap[key][0]["start"] : sourceRangeMap[key][0]["start"]
+
                 located_annotations.push({
-                    "start": a["start"] + sourceRangeMap[key][0]["start"],
-                    "end": a["end"] + sourceRangeMap[key][0]["start"],
-                    "content": a["content"]
+                    "start": start,
+                    "end": end,
+                    "content": a["content"],
+                    "specific": a["start"] === null || a["end"] === null
                 })
             })
             continue;
@@ -251,7 +303,7 @@ function to_text_offsets(annotationMap: any, sourceRangeMap: any, located_annota
         if (sourceRangeMap[key]) {
             to_text_offsets(annotationMap[key], sourceRangeMap[key], located_annotations)
         } else {
-            console.log("key", key, "not found in", sourceRangeMap)
+            // console.log("key", key, "not found in", sourceRangeMap)
         }
     }
 

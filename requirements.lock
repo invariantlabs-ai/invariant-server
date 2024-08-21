@@ -107,7 +107,7 @@ idna==3.7
     # via httpx
     # via requests
     # via tldextract
-invariant @ git+https://github.com/invariantlabs-ai/invariant.git@9edf9881bbabdd4461104492074a985043e6ac3b
+invariant @ git+https://github.com/invariantlabs-ai/invariant.git@0a5489d3e647858a78f62a8f5abef2b79374ab0b
     # via invariant-server
 jinja2==3.1.4
     # via fastapi

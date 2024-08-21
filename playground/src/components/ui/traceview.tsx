@@ -5,40 +5,53 @@ import React from "react";
 
 import { AnnotatedJSON, Annotation } from "./annotations";
 
-export function TraceView(props: { inputData: string, handleInputChange: (value: string | undefined) => void }) {
-    const { inputData, handleInputChange } = props;
-    const [mode, setMode] = useState<"input" | "trace">("trace");
+interface TraceViewProps {
+    inputData: string;
+    handleInputChange: (value: string | undefined) => void;
+    annotations: Record<string, string>
+    sideBySide?: boolean
+}
 
-
-    const ALL_ANNOTATIONS = {
-        // "messages.1.content:0-14": "AAA",
-        // "messages.4.content:0-50": "BBB",
-        // "messages.4.content:10-20": "Hi",
-        "messages.4.tool_calls.0.function.name:0-4": "A",
-        "messages.4.tool_calls.0.function.name:3-4": "A",
-        "messages.2.content:2-10": "BBB",
-        "messages.4.tool_calls.0.function.arguments.command:0-4": "B",
-        "messages.4.tool_calls.0.function.arguments.background:0-5": "C",
-        "messages.5.function.name:0-7": "D",
-    }
-    let annotations = AnnotatedJSON.from_mappings(ALL_ANNOTATIONS)
+export function TraceView(props: TraceViewProps) {
+    const { inputData, handleInputChange, annotations } = props;
+    const [annotatedJSON, setAnnotatedJSON] = useState<AnnotatedJSON | null>(null);
     
-    return <div className="bg-white p-4 shadow rounded mb-4 flex-1 flex flex-col traceview">
+    const [mode, setMode] = useState<"input" | "trace">("trace");
+    
+    const sideBySide = props.sideBySide
+
+    useEffect(() => {
+        setAnnotatedJSON(AnnotatedJSON.from_mappings(annotations))
+    }, [annotations])
+    
+    return <div className="traceview">
         <h2 className="font-bold mb-2">
             INPUT
-            <div className="toggle-group">
-                <button className={mode === "input" ? "active" : ""} onClick={() => setMode("input")}>Edit</button>
-                <button className={mode === "trace" ? "active" : ""} onClick={() => setMode("trace")}>Trace</button>
-            </div>
+            {!sideBySide && <div className="toggle-group">
+                <button className={mode === "input" ? "active" : ""} onClick={() => setMode("input")}>
+                    <span className="inner">Edit</span>
+                </button>
+                <button className={mode === "trace" ? "active" : ""} onClick={() => setMode("trace")}>
+                <span className="inner">Preview</span>
+                </button>
+            </div>}
         </h2>
-        <div className="content">
+        {!sideBySide && <div className={"content"}>
             <div className={"tab" + (mode === "input" ? " active" : "")}>
-                <TraceEditor inputData={inputData} handleInputChange={handleInputChange} annotations={annotations} />
+                <TraceEditor inputData={inputData} handleInputChange={handleInputChange} annotations={annotatedJSON || AnnotatedJSON.empty()} />
             </div>
-            <div className={"tab" + (mode === "trace" ? " active" : "")}>
-                <RenderedTrace trace={inputData} annotations={annotations} />
+            <div className={"tab traces " + (mode === "trace" ? " active" : "")}>
+                <RenderedTrace trace={inputData} annotations={annotatedJSON || AnnotatedJSON.empty()} />
             </div>
-        </div>
+        </div>}
+        {sideBySide && <div className="sidebyside">
+            <div className="side">
+                <TraceEditor inputData={inputData} handleInputChange={handleInputChange} annotations={annotatedJSON || AnnotatedJSON.empty()} />
+            </div>
+            <div className="traces side">
+                <RenderedTrace trace={inputData} annotations={annotatedJSON || AnnotatedJSON.empty()} />
+            </div>
+        </div>}
     </div>
 }
 
@@ -63,7 +76,7 @@ export function TraceEditor(props: { inputData: string, handleInputChange: (valu
                 range: range,
                 options: {
                     isWholeLine: false,
-                    className: "highlight",
+                    className: a.specific ? "light highlight" : "highlight",
                     hoverMessage: { value: a.content }
                 }
             }
@@ -79,23 +92,26 @@ export function TraceEditor(props: { inputData: string, handleInputChange: (valu
         setMonaco(monaco)
         let collection = editor.createDecorationsCollection()
         setEditorDecorations(collection)
-        // editor.deltaDecorations([], [
-        //     {
-        //         range: new monaco.Range(1, 1, 2, 1),
-        //         options: {
-        //             isWholeLine: true,
-        //             className: 'highlight'
-        //         }
-        //     }
-        // ])
-        
     }
 
     return <Editor defaultLanguage="json" value={props.inputData} onChange={props.handleInputChange} height="100%" theme="vs-light" onMount={onMount} options={{
         // line break
         wordWrap: "on",
+        // background color
+        minimap: { enabled: false },
+        // custom theme with adapted background color
+        theme: "vs-light",
+        
     }} />
 }
+
+/**
+ * Uses JSON parse, but support JS comments.
+ */
+function parseTrace(trace: string) {
+    return JSON.parse(trace.replace(/\/\/.*/g, ""))
+}
+
 
 // handles exceptions in the rendering pass, gracefully
 export class RenderedTrace extends React.Component<{ trace: any, annotations: any }, { error: Error | null, parsed: any | null, traceString: string }> {
@@ -117,7 +133,7 @@ export class RenderedTrace extends React.Component<{ trace: any, annotations: an
     parse() {
         if (this.state.traceString !== this.props.trace) {
             try {
-                this.setState({ parsed: JSON.parse(this.props.trace), error: null, traceString: this.props.trace })
+                this.setState({ parsed: parseTrace(this.props.trace), error: null, traceString: this.props.trace })
             } catch (e) {
                 this.setState({ error: e as Error, parsed: null, traceString: this.props.trace })
             }
@@ -140,11 +156,11 @@ export class RenderedTrace extends React.Component<{ trace: any, annotations: an
 
 
         try {
-            return <>
+            return <div className="traces">
                 {(this.state.parsed || []).map((item: any, index: number) => {
                     return <MessageView key={index} index={index} message={item} annotations={this.props.annotations.for_path("messages." + index)} />
                 })}
-            </>
+            </div>
         } catch (e) {
             this.setState({ error: e as Error })
             return null
@@ -175,6 +191,8 @@ class MessageView extends React.Component<{ message: any, index: number, annotat
                 <h3>Failed to Render Message #{this.props.index}: {this.state.error.message}</h3>
             </div>
         }
+        
+        const isHighlighted = this.props.annotations.rootAnnotations.length
 
         try {
             const message = this.props.message
@@ -182,7 +200,7 @@ class MessageView extends React.Component<{ message: any, index: number, annotat
             if (!message.role) {
                 // top-level tool call
                 if (message.type == "function") {
-                    return <div className="message">
+                    return <div className={"message " + (isHighlighted ? "highlight" : "")}>
                         <div className="role seamless"> Assistant </div>
                         <div className="tool-calls seamless">
                             <ToolCallView tool_call={message} annotations={this.props.annotations} />
@@ -190,12 +208,15 @@ class MessageView extends React.Component<{ message: any, index: number, annotat
                     </div>
                 }
 
-                return <div className="message">
-                    <div className="content error"> Failed to Render Message #{this.props.index}: No Role Specified </div>
+                return <div className={"message parser-error" + (isHighlighted ? "highlight" : "")}>
+                    <div className="content error">
+                        <p><b>Failed to render message #{this.props.index}</b>: Could not parse the following as a message or tool call. Every event requires either a "role" or "type" field.</p>
+                        <pre>{JSON.stringify(message, null, 2)}</pre>
+                    </div>
                 </div>
             } else {
                 // standard message
-                return <div className="message">
+                return <div className={"message " + (isHighlighted ? "highlight" : "")}>
                     {message.role && <div className="role"> {message.role} </div>}
                     {message.content && <div className={"content " + message.role}> <Annotated annotations={this.props.annotations.for_path("content")}>{message.content}</Annotated> </div>}
                     {message.tool_calls && <div className={"tool-calls " + (message.content ? "" : " seamless")}>
