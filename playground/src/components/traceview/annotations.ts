@@ -118,7 +118,7 @@ export class AnnotatedJSON {
             }
 
             // construct source range map (maps object properties to ranges in the object string)
-            let srm = sourceRangesToMap(pointers, object_string.length)
+            let srm = sourceRangesToMap(pointers)
 
             // return annotations with text offsets
             return to_text_offsets(this.annotationsMap, srm)
@@ -202,7 +202,7 @@ function disjunct_overlaps(items: { start: number, end: number, content: any }[]
  * Organizes a sequential list of source map ranges of format {start, end, content: /0/tool_calls/0/function/arguments} into a hierarchical map
  * of format { 0: { tool_calls: { 0: { function: { arguments: [ { start, end, content } ] } } } } }
  */
-function sourceRangesToMap(ranges: { start: number, end: number, content: string }[], document_length: number): Record<string, any> {
+function sourceRangesToMap(ranges: { start: number, end: number, content: string }[]): Record<string, any> {
     const map: Record<string, any> = {}
 
     for (const range of ranges) {
@@ -242,37 +242,6 @@ function sourceRangesToMap(ranges: { start: number, end: number, content: string
     }
 
     return map;
-}
-
-function contained(sourceRanges: any): number {
-    let end_values = []
-
-    for (let key of Object.keys(sourceRanges)) {
-        if (key === "$annotations") {
-            sourceRanges[key].map((a: any) => a.end).filter((e: any) => !isNaN(e)).forEach((e: any) => {
-                end_values.push(e)
-            })
-        } else {
-            let children_max_end = contained(sourceRanges[key])
-            if (!isNaN(children_max_end)) {
-                end_values.push(children_max_end)
-            }
-        }
-    }
-
-    if (end_values.length > 0) {
-        let max_end = Math.max(...end_values)
-        if (isNaN(max_end)) { max_end = 0 }
-
-        if (sourceRanges.$annotations) {
-            sourceRanges.$annotations.forEach((a: any) => {
-                a.end = max_end
-            })
-        }
-        return max_end
-    } else {
-        return 0;
-    }
 }
 
 
