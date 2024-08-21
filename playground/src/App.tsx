@@ -6,12 +6,13 @@ import Editor from "@monaco-editor/react";
 import InvariantLogoIcon from "@/assets/logo";
 import Examples from "@/components/Examples";
 import examples from "@/examples";
-import { TraceView } from "./components/ui/traceview";
+import { TraceView } from "./components/traceview/traceview";
 
 function clearTerminalControlCharacters(str: string) {
   // remove control characters like [31m
   return str.replace(/\u001b\[\d+m/g, "");
 }
+import { Base64 } from "js-base64";
 
 const App = () => {
   const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[0].policy);
@@ -33,10 +34,12 @@ const App = () => {
       handleExampleSelect(parseInt(hash, 10)); // Convert to int and call handleExampleSelect
     } else if (hash) {
       try {
-        const decodedData = JSON.parse(atob(hash));
+        const decodedData = JSON.parse(Base64.decode(hash));
         if (decodedData.policy && decodedData.input) {
           setPolicyCode(decodedData.policy);
           setInputData(decodedData.input);
+          setOutput("");
+          setRanges({});
           localStorage.setItem("policy", decodedData.policy);
           localStorage.setItem("input", decodedData.input);
         }
@@ -130,6 +133,8 @@ const App = () => {
 
     const selectedExample = examples[exampleIndex];
     setPolicyCode(selectedExample.policy);
+    setOutput("");
+    setRanges({});
     setInputData(selectedExample.input);
     localStorage.setItem("policy", selectedExample.policy);
     localStorage.setItem("input", selectedExample.input);
@@ -137,7 +142,7 @@ const App = () => {
 
   const handleShare = () => {
     const data = JSON.stringify({ policy: policyCode, input: inputData });
-    const encodedData = btoa(data);
+    const encodedData = Base64.encode(data);
     const shareUrl = `${window.location.origin}${window.location.pathname}#${encodedData}`;
 
     navigator.clipboard
