@@ -183,7 +183,7 @@ const App = () => {
           <ResizablePanel className="flex-1 flex flex-col">
             <div className="flex-1 flex flex-col">
               <h2 className="font-bold mb-2 m-2">POLICY</h2>
-              <Editor height="100%" defaultLanguage="python" value={policyCode} onChange={(value) => setPolicyCode(value || "")} theme="vs-light" />
+              <PolicyEditor height="100%" defaultLanguage="python" value={policyCode} onChange={(value: any) => setPolicyCode(value || "")} theme="vs-light" />
             </div>
           </ResizablePanel>
 
@@ -192,7 +192,7 @@ const App = () => {
           <ResizablePanel className="flex-1">
             <ResizablePanelGroup direction="vertical">
               <ResizablePanel className="flex-1 flex flex-col">
-                <TraceView inputData={inputData} handleInputChange={handleInputChange} annotations={ranges}/>
+                <TraceView inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={(props) => <InlineAnnotationView {...props} />} />
               </ResizablePanel>
 
               <ResizableHandle className="h-2 bg-gray-300 hover:bg-gray-500" />
@@ -223,5 +223,18 @@ const App = () => {
     </div>
   );
 };
+
+function InlineAnnotationView(props: any) {
+  return <>
+    <span>These are the annotation for:</span>
+    <pre>
+      {JSON.stringify(props, null, 2)}
+    </pre>
+  </>
+}
+
+function PolicyEditor(props: any) {
+  return <Editor height="100%" defaultLanguage="python" theme="vs-light" {...props} />;
+}
 
 export default App;

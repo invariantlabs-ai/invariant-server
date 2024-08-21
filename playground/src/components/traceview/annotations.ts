@@ -104,7 +104,7 @@ export class AnnotatedJSON {
         // extract source map pointers
         try {
             const map = jsonMap.parse(object_string)
-                
+
             const pointers = []
             for (const key in map.pointers) {
                 const pointer = map.pointers[key]
@@ -118,7 +118,7 @@ export class AnnotatedJSON {
             }
 
             // construct source range map (maps object properties to ranges in the object string)
-            let srm = sourceRangesToMap(pointers, object_string.length)
+            let srm = sourceRangesToMap(pointers)
 
             // return annotations with text offsets
             return to_text_offsets(this.annotationsMap, srm)
@@ -136,6 +136,29 @@ export class AnnotatedJSON {
     static disjunct(annotations: Annotation[]): GroupedAnnotation[] {
         return disjunct_overlaps(annotations)
     }
+
+    static by_lines(disjunct_annotations: Annotation[], text: string): GroupedAnnotation[][] {
+        let result: GroupedAnnotation[][] = [[]]
+        let queue: GroupedAnnotation[] = disjunct_annotations.map((a) => ({ start: a.start, end: a.end, content: a.content }))
+
+        while (queue.length > 0) {
+            const front = queue[0]
+            const content = text.substring(front.start, front.end)
+            const lines = content.split('\n')
+
+            if (lines.length === 1) {
+                result[result.length-1].push({ start: front.start, end: front.end, content: front.content })
+                queue.shift()
+            } else {
+                result[result.length-1].push({ start: front.start, end: front.start + lines[0].length + 1, content: front.content })
+                result.push([])
+                front.start += lines[0].length + 1
+            }
+        }
+
+        return result
+    }
+
 
     static empty(): AnnotatedJSON {
         return new AnnotatedJSON(empty())
@@ -202,7 +225,7 @@ function disjunct_overlaps(items: { start: number, end: number, content: any }[]
  * Organizes a sequential list of source map ranges of format {start, end, content: /0/tool_calls/0/function/arguments} into a hierarchical map
  * of format { 0: { tool_calls: { 0: { function: { arguments: [ { start, end, content } ] } } } } }
  */
-function sourceRangesToMap(ranges: { start: number, end: number, content: string }[], document_length: number): Record<string, any> {
+function sourceRangesToMap(ranges: { start: number, end: number, content: string }[]): Record<string, any> {
     const map: Record<string, any> = {}
 
     for (const range of ranges) {
@@ -242,37 +265,6 @@ function sourceRangesToMap(ranges: { start: number, end: number, content: string
     }
 
     return map;
-}
-
-function contained(sourceRanges: any): number {
-    let end_values = []
-
-    for (let key of Object.keys(sourceRanges)) {
-        if (key === "$annotations") {
-            sourceRanges[key].map((a: any) => a.end).filter((e: any) => !isNaN(e)).forEach((e: any) => {
-                end_values.push(e)
-            })
-        } else {
-            let children_max_end = contained(sourceRanges[key])
-            if (!isNaN(children_max_end)) {
-                end_values.push(children_max_end)
-            }
-        }
-    }
-
-    if (end_values.length > 0) {
-        let max_end = Math.max(...end_values)
-        if (isNaN(max_end)) { max_end = 0 }
-
-        if (sourceRanges.$annotations) {
-            sourceRanges.$annotations.forEach((a: any) => {
-                a.end = max_end
-            })
-        }
-        return max_end
-    } else {
-        return 0;
-    }
 }
 
 
