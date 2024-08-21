@@ -54,7 +54,10 @@ raise "must not send emails to anyone but 'Peter' after seeing the inbox" if:
         assert response.status_code == 200
         assert response.json() == {
             "errors": [
-                "PolicyViolation(must not send emails to anyone but 'Peter' after seeing the inbox, ranges=[<2 ranges>])"
+                {
+                    "error": "PolicyViolation(must not send emails to anyone but 'Peter' after seeing the inbox, ranges=[<2 ranges>])",
+                    "ranges": ["messages.1.tool_calls.0", "messages.3"],
+                },
             ],
             "handled_errors": [],
         }

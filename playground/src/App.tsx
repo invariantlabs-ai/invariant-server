@@ -7,12 +7,24 @@ import InvariantLogoIcon from "@/assets/logo";
 import Examples from "@/components/Examples";
 import examples from "@/examples";
 import { TraceView } from "./components/traceview/traceview";
+import Spinning from "./assets/spinning";
+import { Base64 } from "js-base64";
 
 function clearTerminalControlCharacters(str: string) {
   // remove control characters like [31m
+  // eslint-disable-next-line no-control-regex
   return str.replace(/\u001b\[\d+m/g, "");
 }
-import { Base64 } from "js-base64";
+
+interface AnalysisResult {
+  errors: Error[];
+  handled_errors: Error[];
+}
+
+interface Error {
+  error: string;
+  ranges: string[];
+}
 
 const App = () => {
   const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[0].policy);
@@ -84,24 +96,24 @@ const App = () => {
         body: JSON.stringify({ trace: JSON.parse(inputData), policy: policyCode }),
       });
 
-      const analyzeData = await analyzeResponse.json();
+      const analysisResult: string | AnalysisResult = await analyzeResponse.json();
       
       // check for error messages
-      if (typeof analyzeData !== "object") {
-        setOutput(clearTerminalControlCharacters(analyzeData));
+      if (typeof analysisResult === "string") {
+        setOutput(clearTerminalControlCharacters(analysisResult));
         setRanges({});
         setLoading(false);
         return;
       }
 
       const annotations: Record<string, string> = {};
-      analyzeData.errors.forEach((e: any) => {
-        e.ranges.forEach((r: any) => {
+      analysisResult.errors.forEach((e: Error) => {
+        e.ranges.forEach((r: string) => {
           annotations[r] = e["error"]
         })
       })
       setRanges(annotations);
-      setOutput(JSON.stringify(analyzeData, null, 2));
+      setOutput(JSON.stringify(analysisResult, null, 2));
     } catch (error) {
       console.error("Failed to evaluate policy:", error);
       setRanges({});
@@ -191,22 +203,19 @@ const App = () => {
 
           <ResizablePanel className="flex-1">
             <ResizablePanelGroup direction="vertical">
-              <ResizablePanel className="flex-1 flex flex-col">
-                <TraceView inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={(props) => <InlineAnnotationView {...props} />} />
+              <ResizablePanel className="flex-1 flex flex-col" defaultSize={65}>
+              <TraceView inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={(props) => <InlineAnnotationView {...props} />} />
               </ResizablePanel>
 
               <ResizableHandle className="h-2 bg-gray-300 hover:bg-gray-500" />
 
-              <ResizablePanel className="flex-1 flex flex-col">
+              <ResizablePanel className="flex-1 flex flex-col" defaultSize={35}>
                 <div className="bg-white p-4 shadow rounded flex-1 flex flex-col max-h-[100%]">
                   <h2 className="font-bold mb-2">OUTPUT</h2>
                   <div className="w-full max-h-full flex-1 p-2 border rounded bg-gray-50 overflow-auto">
                     {loading ? (
                       <div className="flex justify-center items-center h-full">
-                        <svg className="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                        </svg>
+                        <Spinning />
                       </div>
                     ) : (
                       <div className="flex-1 overflow-y-auto whitespace-pre-wrap break-words">{output}</div>
