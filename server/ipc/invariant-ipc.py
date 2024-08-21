@@ -10,6 +10,7 @@ from invariant.stdlib.invariant.detectors import (
     semgrep,
 )
 from invariant.stdlib.invariant.nodes import Message
+
 from invariant.runtime.utils.code import CodeIssue
 from typing import List, Dict
 import os
@@ -49,7 +50,12 @@ def handle_request(data):
 
 def worker(client_socket):
     try:
-        data = client_socket.recv(10 * 1024 * 1024)
+        data = b""
+        while True:
+            chunk = client_socket.recv(4096)
+            if not chunk:
+                break
+            data += chunk
         response = handle_request(data)
         client_socket.sendall(response)
     except Exception as e:

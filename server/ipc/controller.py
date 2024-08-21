@@ -51,12 +51,16 @@ class IpcController:
 
         reader, writer = await asyncio.open_unix_connection(self.socket_path)
         writer.write(json.dumps(message).encode())
+        writer.write_eof()
         await writer.drain()
 
         response = await reader.read(10 * 1024 * 1024)
 
         writer.close()
-        await writer.wait_closed()
+        try:
+            await writer.wait_closed()
+        except BrokenPipeError:
+            pass
 
         return json.loads(response.decode())
 

@@ -12,6 +12,7 @@ function clearTerminalControlCharacters(str: string) {
   // remove control characters like [31m
   return str.replace(/\u001b\[\d+m/g, "");
 }
+import { Base64 } from "js-base64";
 
 const App = () => {
   const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[0].policy);
@@ -33,7 +34,7 @@ const App = () => {
       handleExampleSelect(parseInt(hash, 10)); // Convert to int and call handleExampleSelect
     } else if (hash) {
       try {
-        const decodedData = JSON.parse(atob(hash));
+        const decodedData = JSON.parse(Base64.decode(hash));
         if (decodedData.policy && decodedData.input) {
           setPolicyCode(decodedData.policy);
           setInputData(decodedData.input);
@@ -141,7 +142,7 @@ const App = () => {
 
   const handleShare = () => {
     const data = JSON.stringify({ policy: policyCode, input: inputData });
-    const encodedData = btoa(data);
+    const encodedData = Base64.encode(data);
     const shareUrl = `${window.location.origin}${window.location.pathname}#${encodedData}`;
 
     navigator.clipboard
