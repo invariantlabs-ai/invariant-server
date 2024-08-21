@@ -46,7 +46,7 @@ def handle_request(data):
 
 def worker(client_socket):
     try:
-        data = b''
+        data = b""
         while True:
             chunk = client_socket.recv(4096)
             if not chunk:

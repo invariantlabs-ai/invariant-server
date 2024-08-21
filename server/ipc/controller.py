@@ -55,7 +55,7 @@ class IpcController:
         await writer.drain()
 
         response = await reader.read(10 * 1024 * 1024)
-        
+
         writer.close()
         try:
             await writer.wait_closed()
