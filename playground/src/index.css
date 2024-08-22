@@ -67,3 +67,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+.message span.line:not(.has-annotations):hover {
+  background-color: transparent !important;
+}

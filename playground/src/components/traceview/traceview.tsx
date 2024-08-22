@@ -1,7 +1,8 @@
-import "../../TraceView.scss"
+import "./TraceView.scss"
 import Editor from "@monaco-editor/react";
 import { useEffect, useRef, useState } from "react";
 import React from "react";
+import { BsCaretRightFill, BsCaretDownFill, BsPersonFill, BsRobot, BsChatFill } from "react-icons/bs";
 
 import { AnnotatedJSON, Annotation, GroupedAnnotation } from "./annotations";
 
@@ -207,12 +208,83 @@ interface MessageViewProps {
     address: string
 }
 
-class MessageView extends React.Component<MessageViewProps, { error: Error | null }> {
+function RoleIcon(props: { role: string }) {
+    const role = props.role;
+    if (role === "user") {
+        return <BsPersonFill />
+    } else if (role === "assistant") {
+        return <BsRobot />
+    } else {
+        return <BsChatFill />
+    }
+}
+
+function MessageHeader(props: { className: string, role: string, message: any, expanded: boolean, setExpanded: (state: boolean) => void, address: string }) {
+    return <div className={"role " + props.className} onClick={() => props.setExpanded(!props.expanded)}>
+        {props.expanded ? <BsCaretRightFill/> : <BsCaretDownFill/>}
+        <RoleIcon role={props.role} />
+        {props.role}
+        <CompactView message={props} />
+        <div className="address">
+            {props.address}
+        </div>
+    </div>
+}
+
+const categorical_colors = [
+    "#E1D1CF",
+    "#FFC8C0",
+    "#FECF49",
+    "#9FE5A2",
+    "#B1DBEF",
+    "#D0D2F7",
+    "#D5D2E8",
+    "#D0D5DC"
+]
+
+function string_color(s: string) {
+    const hash = s.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
+    return categorical_colors[hash % categorical_colors.length]
+}
+
+function CompactView(props: { message: any }) {
+    // get first tool call or use message as tool call
+    const message = props.message.message
+    let tool_call = message.tool_calls ? message.tool_calls[0] : null
+    if (!message.role && message.type == "function") tool_call = message
+    
+    // if no tool call, no compact representation
+    if (!tool_call) {
+        return null
+    }
+
+    // get single line of <function_name>(<arguments>)
+    const f = tool_call.function
+    
+    // format compact representation
+    let compact = f.name + "(" + JSON.stringify(f.arguments)
+    // replace all newlines with empty space
+    compact = compact.replace(/\n/g, " ")
+    // truncate to max 50 characters
+    compact = compact.substring(0, 50)
+    // add ellipsis if truncated
+    if (compact.length == 50) {
+        compact += "…"
+    }
+    compact += ")"
+    
+    return <span className="badge" style={{ backgroundColor: string_color(f.name) }}>
+        {compact}
+    </span>
+}
+
+class MessageView extends React.Component<MessageViewProps, { error: Error | null, expanded: boolean }> {
     constructor(props: MessageViewProps) {
         super(props)
 
         this.state = {
-            error: null
+            error: null, 
+            expanded: false
         }
     }
 
@@ -235,16 +307,13 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
             if (!message.role) {
                 // top-level tool call
                 if (message.type == "function") {
-                    return <div className="message">
-                        <div className="role seamless">
-                            Assistant
-                            <div className="address">
-                                {this.props.address}
-                            </div>
-                        </div>
+                    return <div className={"message tool-call" + (this.state.expanded ? " expanded" : "")}>
+                        <MessageHeader message={message} className="seamless" role="Assistant" expanded={this.state.expanded} setExpanded={(state: boolean) => this.setState({ expanded: state })} address={this.props.address} />
+                        {!this.state.expanded && <>
                         <div className="tool-calls seamless">
                             <ToolCallView tool_call={message} annotations={this.props.annotations} annotationContext={this.props.annotationContext} address={this.props.address} />
                         </div>
+                        </>}
                     </div>
                 }
 
@@ -257,19 +326,22 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
                 </div>
             } else {
                 // normal message (role + content and optional tool calls)
-                return <div className={"message " + (isHighlighted ? "highlight" : "")}>
-                    {message.role && <div className="role">
+                return <div className={"message " + (isHighlighted ? "highlight" : "") + " " + message.role + (this.state.expanded ? " expanded" : "")}>
+                    {/* {message.role && <div className="role">
                         {message.role}
                         <div className="address">
                             {this.props.address}
                         </div>
-                    </div>}
+                    </div>} */}
+                    {message.role && <MessageHeader message={message} className="role" role={message.role} expanded={this.state.expanded} setExpanded={(state: boolean) => this.setState({ expanded: state })} address={this.props.address} />}
+                    {!this.state.expanded && <>
                     {message.content && <div className={"content " + message.role}> <Annotated annotations={this.props.annotations.for_path("content")} annotationContext={this.props.annotationContext} address={this.props.address + ".content"}>{message.content}</Annotated></div>}
                     {message.tool_calls && <div className={"tool-calls " + (message.content ? "" : " seamless")}>
                         {message.tool_calls.map((tool_call: any, index: number) => {
                             return <ToolCallView key={index} tool_call={tool_call} annotations={this.props.annotations.for_path("tool_calls." + index)} annotationContext={this.props.annotationContext} address={this.props.address + ".tool_calls[" + index + "]"} />
                         })}
                     </div>}
+                    </>}
                 </div>
             }
 
