@@ -39,11 +39,14 @@ function empty(): AnnotationMap {
  * Use `AnnotatedJSON.from_mappings` to create an instance from a list of annotations as shown below.
  */
 export class AnnotatedJSON {
-    data: any
+    // immutable representation of all annotations organized by path (do not modify directly)
     annotationsMap: AnnotationMap
+    // caches results of `for_path` calls to maintain as much shared state as possible (avoids re-rendering in react)
+    cachedSubs: Record<string, AnnotatedJSON>
 
     constructor(annotations: AnnotationMap) {
         this.annotationsMap = annotations as AnnotationMap
+        this.cachedSubs = {}
     }
 
     /**
@@ -54,23 +57,50 @@ export class AnnotatedJSON {
      */
     for_path(path: string): AnnotatedJSON {
         if (!this.annotationsMap) {
-            return new AnnotatedJSON(empty())
+            return EMPTY_ANNOTATIONS
         }
     
+        if (this.cachedSubs[path]) {
+            return this.cachedSubs[path]
+        }
+
         let tree = this.annotationsMap
 
         for (const key of path.split('.')) {
             if (!tree[key]) {
-                return new AnnotatedJSON(empty())
+                return EMPTY_ANNOTATIONS
             }
             tree = tree[key]
         }
-    
-        return new AnnotatedJSON(tree)
+        
+        if (tree.$annotations?.length === 0 && Object.keys(tree).length === 1) {
+            return EMPTY_ANNOTATIONS
+        }
+        
+        let sub = new AnnotatedJSON(tree)
+        this.cachedSubs[path] = sub
+        return sub
     }
 
     get rootAnnotations(): Annotation[] {
         return this.annotationsMap.$annotations || []
+    }
+
+    allAnnotations(): Annotation[] {
+        let queue = [this.annotationsMap]
+        let annotations = []
+        while (queue.length > 0) {
+            let current: any = queue.shift()
+            if (current.$annotations) {
+                annotations.push(...current.$annotations)
+            }
+            for (let key in current) {
+                if (key !== "$annotations") {
+                    queue.push(current[key])
+                }
+            }
+        }
+        return annotations
     }
 
     /**
@@ -89,6 +119,10 @@ export class AnnotatedJSON {
      * 
      */
     static from_mappings(mappings: Record<string, string>) {
+        if (!mappings || Object.keys(mappings).length === 0) {
+            return EMPTY_ANNOTATIONS
+        }
+
         let annotationsMap = annotationsToMap(mappings)
         return new AnnotatedJSON(annotationsMap)
     }
@@ -104,7 +138,7 @@ export class AnnotatedJSON {
         // extract source map pointers
         try {
             const map = jsonMap.parse(object_string)
-                
+
             const pointers = []
             for (const key in map.pointers) {
                 const pointer = map.pointers[key]
@@ -118,12 +152,12 @@ export class AnnotatedJSON {
             }
 
             // construct source range map (maps object properties to ranges in the object string)
-            let srm = sourceRangesToMap(pointers, object_string.length)
+            let srm = sourceRangesToMap(pointers)
 
             // return annotations with text offsets
             return to_text_offsets(this.annotationsMap, srm)
         } catch (e) {
-            console.error("Failed to parse source map", e)
+            console.error("Failed to parse source map for", [object_string, e])
             return []
         }
     }
@@ -137,10 +171,58 @@ export class AnnotatedJSON {
         return disjunct_overlaps(annotations)
     }
 
+    static by_lines(disjunct_annotations: Annotation[], text: string): GroupedAnnotation[][] {
+        let result: GroupedAnnotation[][] = [[]]
+        let queue: GroupedAnnotation[] = disjunct_annotations.map((a) => ({ start: a.start, end: a.end, content: a.content }))
+
+        while (queue.length > 0) {
+            const front = queue[0]
+            const content = text.substring(front.start, front.end)
+            const lines = content.split('\n')
+
+            if (lines.length === 1) {
+                result[result.length-1].push({ start: front.start, end: front.end, content: front.content })
+                queue.shift()
+            } else {
+                result[result.length-1].push({ start: front.start, end: front.start + lines[0].length + 1, content: front.content })
+                result.push([])
+                front.start += lines[0].length + 1
+            }
+        }
+
+        return result
+    }
+
+
     static empty(): AnnotatedJSON {
-        return new AnnotatedJSON(empty())
+        return EMPTY_ANNOTATIONS
     }
 }
+
+// shared empty annotations instance
+class EmptyAnnotations extends AnnotatedJSON {
+    constructor() {
+        super(empty())
+    }
+
+    for_path(_path: string): AnnotatedJSON {
+        return this
+    }
+
+    get rootAnnotations(): Annotation[] {
+        return []
+    }
+
+    in_text(_object_string: string): Annotation[] {
+        return []
+    }
+
+    toString(): string {
+        return "EmptyAnnotations"
+    }
+}
+
+export const EMPTY_ANNOTATIONS = new EmptyAnnotations()
 
 /**
  * Turns a list of {start, end, content} items into a list of fully separated intervals, where the list of
@@ -202,7 +284,7 @@ function disjunct_overlaps(items: { start: number, end: number, content: any }[]
  * Organizes a sequential list of source map ranges of format {start, end, content: /0/tool_calls/0/function/arguments} into a hierarchical map
  * of format { 0: { tool_calls: { 0: { function: { arguments: [ { start, end, content } ] } } } } }
  */
-function sourceRangesToMap(ranges: { start: number, end: number, content: string }[], document_length: number): Record<string, any> {
+function sourceRangesToMap(ranges: { start: number, end: number, content: string }[]): Record<string, any> {
     const map: Record<string, any> = {}
 
     for (const range of ranges) {
@@ -242,37 +324,6 @@ function sourceRangesToMap(ranges: { start: number, end: number, content: string
     }
 
     return map;
-}
-
-function contained(sourceRanges: any): number {
-    let end_values = []
-
-    for (let key of Object.keys(sourceRanges)) {
-        if (key === "$annotations") {
-            sourceRanges[key].map((a: any) => a.end).filter((e: any) => !isNaN(e)).forEach((e: any) => {
-                end_values.push(e)
-            })
-        } else {
-            let children_max_end = contained(sourceRanges[key])
-            if (!isNaN(children_max_end)) {
-                end_values.push(children_max_end)
-            }
-        }
-    }
-
-    if (end_values.length > 0) {
-        let max_end = Math.max(...end_values)
-        if (isNaN(max_end)) { max_end = 0 }
-
-        if (sourceRanges.$annotations) {
-            sourceRanges.$annotations.forEach((a: any) => {
-                a.end = max_end
-            })
-        }
-        return max_end
-    } else {
-        return 0;
-    }
 }
 
 

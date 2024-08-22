@@ -1,6 +1,6 @@
 body {
     --highlight-color: rgba(132, 126, 255, 0.445);
-    --highlight-message: rgba(132, 126, 255, 0.225);
+    --highlight-message: rgba(132, 126, 255, 0.125);
 }
 
 .traceview {
@@ -176,6 +176,7 @@ body {
         cursor: default;
         color: rgba(0, 0, 0, 0.587);
         font-size: 0.7em;
+        position: relative;
 
         &.seamless {
             border-bottom: none;
@@ -190,17 +191,40 @@ body {
         .function-name {
             padding: 5pt;
             font-family: monospace;
-            background-color: rgb(244, 244, 244);
+            background-color: rgba(0, 0, 0, 0.01);
+            background-size: 5pt 5pt;
             border-bottom: 1pt solid var(--border-color);
+            position: relative;
+
+            .address {
+                top: 7pt;
+            }
         }
 
         .arguments {
-            padding: 5pt;
+            padding: 0pt;
         }
 
         &.highlight {
             background-color: var(--highlight-message);
         }
+
+        pre {
+            white-space: pre-wrap;
+        }
+    }
+
+    span.line {
+        &.has-annotations:hover {
+            background-color: rgba(0, 0, 0, 0.07);
+            padding: 2pt 0pt;
+            border-radius: 2pt;
+        }
+    }
+
+    span.annotated-parent {
+        // do not indent first line of p
+        margin-left: -3pt;
     }
 
     span.annotated {
@@ -259,4 +283,77 @@ body {
 .traces {
     padding-bottom: 130pt;
     padding-right: 2pt;
+
+    div.address {
+        text-transform: none;
+        opacity: 0.4;
+        font-weight: normal;
+        font-family: monospace;
+        font-size: 0.8em;
+        position: absolute;
+        top: 5pt;
+        right: 5pt;
+    }
+}
+
+div.inline-line-editor {
+    width: calc(100% + 4pt);
+    background-color: var(--secondary-background-color);
+    border-top: 1pt solid var(--border-color);
+    border-bottom: 1pt solid var(--border-color);
+    position: relative;
+    left: -5pt;
+    padding-left: 5pt;
+    margin-top: 5pt;
+    margin-bottom: 10pt;
+    width: calc(100% + 10pt);
+    padding: 5pt 5pt;
+}
+
+.tool-call.highlight {
+    div.inline-line-editor {
+        background-color: rgb(247, 247, 247);
+    }
+}
+
+span.nl {
+    user-select: none;
+    -webkit-user-select: none;
+    opacity: 0.3;
+    cursor: default;
+}
+
+table.json {
+    width: 100%;
+    border-collapse: collapse;
+
+    td {
+        padding: 5pt;
+        background-color: rgba(0, 0, 0, 0.04);
+        border-bottom: 1pt solid white;
+        border-right: 1pt solid white;
+    }
+
+    tr td:last-child {
+        border-right: none;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr {
+        margin-bottom: 2pt;
+    }
+
+    tr td:first-child {
+        padding-left: 0pt;
+        text-align: right;
+        vertical-align: top;
+        padding-left: 10pt;
+    }
+
+    tr td {
+        padding-left: 7pt;
+    }
 }
