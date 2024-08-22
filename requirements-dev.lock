@@ -172,6 +172,10 @@ preshed==3.0.9
     # via thinc
 presidio-analyzer==2.2.354
     # via invariant-server
+prometheus-client==0.20.0
+    # via prometheus-fastapi-instrumentator
+prometheus-fastapi-instrumentator==7.0.0
+    # via invariant-server
 psutil==5.9.8
     # via fastapi-utils
 pydantic==2.8.2
@@ -257,6 +261,7 @@ srsly==2.4.8
     # via weasel
 starlette==0.37.2
     # via fastapi
+    # via prometheus-fastapi-instrumentator
 sympy==1.13.2
     # via torch
 termcolor==2.4.0

@@ -3,6 +3,7 @@ from server.routers import policy, monitor
 from server.ipc.controller import get_ipc_controller
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 from contextlib import asynccontextmanager
 import hashlib
 
@@ -34,6 +35,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+Instrumentator().instrument(app).expose(app)
 
 app.add_middleware(HashRequestBodyMiddleware)
 
