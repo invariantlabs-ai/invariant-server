@@ -23,8 +23,10 @@ def analyze(policy: str, trace: List[Dict]):
         "errors": [
             {
                 "error": repr(error),
-                "ranges": ["messages." + r.json_path for r in error.ranges]
-            } for error in analysis_result.errors],
+                "ranges": ["messages." + r.json_path for r in error.ranges],
+            }
+            for error in analysis_result.errors
+        ],
         "handled_errors": [
             repr(handled_error) for handled_error in analysis_result.handled_errors
         ],
