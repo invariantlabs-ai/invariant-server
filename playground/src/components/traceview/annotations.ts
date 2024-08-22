@@ -86,6 +86,23 @@ export class AnnotatedJSON {
         return this.annotationsMap.$annotations || []
     }
 
+    allAnnotations(): Annotation[] {
+        let queue = [this.annotationsMap]
+        let annotations = []
+        while (queue.length > 0) {
+            let current: any = queue.shift()
+            if (current.$annotations) {
+                annotations.push(...current.$annotations)
+            }
+            for (let key in current) {
+                if (key !== "$annotations") {
+                    queue.push(current[key])
+                }
+            }
+        }
+        return annotations
+    }
+
     /**
      * Creates an AnnotatedJSON object from a list of key-value pairs, where the key is the path to the annotation
      * 
@@ -140,7 +157,7 @@ export class AnnotatedJSON {
             // return annotations with text offsets
             return to_text_offsets(this.annotationsMap, srm)
         } catch (e) {
-            console.error("Failed to parse source map", e)
+            console.error("Failed to parse source map for", [object_string, e])
             return []
         }
     }

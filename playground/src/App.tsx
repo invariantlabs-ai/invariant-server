@@ -204,7 +204,7 @@ const App = () => {
           <ResizablePanel className="flex-1">
             <ResizablePanelGroup direction="vertical">
               <ResizablePanel className="flex-1 flex flex-col" defaultSize={65}>
-              <TraceView inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={(props) => <InlineAnnotationView {...props} />} />
+              <TraceView inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={InlineAnnotationView} />
               </ResizablePanel>
 
               <ResizableHandle className="h-2 bg-gray-300 hover:bg-gray-500" />
@@ -234,13 +234,26 @@ const App = () => {
 };
 
 function InlineAnnotationView(props: any) {
+  if ((props.highlights || []).length === 0) {
+    return null;
+  }
   return <>
   {/* on hover highlight border */}
     <div className="bg-white p-4 rounded flex flex-col max-h-[100%] border">
-      <span>These are the annotation for:</span>
-      <pre>
+      {/* <span>These are the annotation for:</span> */}
+      {/* <pre>
         {JSON.stringify(props, null, 2)}
-      </pre>
+      </pre> */}
+      <ul>
+      {(props.highlights || []).map((highlight: any, index: number) => {
+        return <li key={'highlight-' + index}>
+          {/* <span>{highlight.snippet}</span><br/> */}
+          <span>{highlight.content.map((c: any, i: number) => {
+            return <span key={'content-' + i}>{c}</span>
+          })}</span>
+        </li>
+      })}
+      </ul>
     </div>
   </>
 }

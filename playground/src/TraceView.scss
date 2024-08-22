@@ -202,7 +202,7 @@ body {
         }
 
         .arguments {
-            padding: 5pt;
+            padding: 0pt;
         }
 
         &.highlight {
@@ -215,7 +215,7 @@ body {
     }
 
     span.line {
-        &:hover {
+        &.has-annotations:hover {
             background-color: rgba(0, 0, 0, 0.07);
             padding: 2pt 0pt;
             border-radius: 2pt;
@@ -321,4 +321,39 @@ span.nl {
     -webkit-user-select: none;
     opacity: 0.3;
     cursor: default;
+}
+
+table.json {
+    width: 100%;
+    border-collapse: collapse;
+
+    td {
+        padding: 5pt;
+        background-color: rgba(0, 0, 0, 0.04);
+        border-bottom: 1pt solid white;
+        border-right: 1pt solid white;
+    }
+
+    tr td:last-child {
+        border-right: none;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr {
+        margin-bottom: 2pt;
+    }
+
+    tr td:first-child {
+        padding-left: 0pt;
+        text-align: right;
+        vertical-align: top;
+        padding-left: 10pt;
+    }
+
+    tr td {
+        padding-left: 7pt;
+    }
 }

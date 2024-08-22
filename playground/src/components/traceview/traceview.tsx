@@ -3,7 +3,7 @@ import Editor from "@monaco-editor/react";
 import { useEffect, useRef, useState } from "react";
 import React from "react";
 
-import { AnnotatedJSON, Annotation } from "./annotations";
+import { AnnotatedJSON, Annotation, GroupedAnnotation } from "./annotations";
 
 interface TraceViewProps {
     inputData: string;
@@ -317,10 +317,46 @@ function ToolCallView(props: { tool_call: any, annotations: any, annotationConte
         </div>
         <div className="arguments">
             <pre>
-                <AnnotatedStringifiedJSON annotations={argumentAnnotations} annotationContext={props.annotationContext} address={props.address + ".function.arguments"}>{args}</AnnotatedStringifiedJSON>
+                <AnnotatedJSONTable tool_call={props.tool_call} annotations={argumentAnnotations} annotationContext={props.annotationContext} address={props.address + ".function.arguments"}>{args}</AnnotatedJSONTable>
             </pre>
         </div>
     </div>
+}
+
+function AnnotatedJSONTable(props: { tool_call: any, annotations: any, children: any, annotationContext?: AnnotationContext, address: string }) {
+    // fall back
+    // return <AnnotatedStringifiedJSON annotations={props.annotations} address={props.address}>{props.children}</AnnotatedStringifiedJSON>
+
+    const tool_call = props.tool_call
+    const annotations = props.annotations
+
+    if (tool_call.type != "function") {
+        return <pre>{JSON.stringify(tool_call, null, 2)}</pre>
+    }
+    
+    const f = tool_call.function
+    let args = f.arguments;
+    let keys = [];
+
+    // format args as error message if undefined
+    if (typeof args === "undefined") {
+        return <span className="error">No .arguments field found</span>
+    } else if (typeof args === "object") {
+        keys = Object.keys(args)
+    } else {
+        return <AnnotatedStringifiedJSON annotations={annotations} address={props.address}>{args}</AnnotatedStringifiedJSON>
+    }
+
+    return <table className="json">
+        <tbody>
+            {keys.map((key: string, index: number) => {
+                return <tr key={index}>
+                    <td className="key">{key}</td>
+                    <td className="value"><AnnotatedStringifiedJSON annotations={annotations.for_path(key)} address={props.address + "." + key} annotationContext={props.annotationContext}>{JSON.stringify(args[key], null, 2)}</AnnotatedStringifiedJSON></td>
+                </tr>
+            })}
+        </tbody>
+    </table>
 }
 
 function replaceNLs(content: string, key: string) {
@@ -368,7 +404,15 @@ function Annotated(props: { annotations: any, children: any, annotationContext?:
                     line.push(<span key={(elements.length) + "-" + (interval.start) + "-" + (interval.end)} className="annotated">{message_content}</span>)
                 }
             }
-            elements.push(<Line key={'line-' + elements.length} annotationContext={props.annotationContext} address={props.address + ":L" + elements.length}>{line}</Line>)
+            const highlights = annotations
+                .filter(a => a.content)
+                .map(a => ({
+                    snippet: content.substring(a.start - 1, a.end - 1),
+                    start: a.start - 1,
+                    end: a.end - 1,
+                    content: a.content
+                }))
+            elements.push(<Line key={'line-' + elements.length} highlights={highlights} annotationContext={props.annotationContext} address={props.address + ":L" + elements.length}>{line}</Line>)
         }
         setContentElements(elements)
     }, [props.annotations, props.children, props.annotationContext?.selectedAnnotationAnchor])
@@ -400,17 +444,18 @@ function AnnotatedStringifiedJSON(props: { annotations: any, children: any, anno
                     const content = props.children.toString().substring(interval.start, interval.end)
                     line.push(<span key={(interval.start) + "-" + (interval.end)} className="annotated">
                         {content}
-                        {/* <div className="annotations">
-                            {interval.content.map((annotation: any, index: number) => {
-                                return <div key={index} className="a">
-                                    {annotation}
-                                </div>
-                            })}
-                        </div> */}
                     </span>)
                 }
             }
-            elements.push(<Line key={'line-' + elements.length} annotationContext={props.annotationContext} address={props.address + ":L" + elements.length}>{line}</Line>)
+            const highlights = annotations
+                .filter(a => a.content)
+                .map(a => ({
+                    snippet: content.substring(a.start, a.end),
+                    start: a.start,
+                    end: a.end,
+                    content: a.content
+                }))
+            elements.push(<Line key={'line-' + elements.length} highlights={highlights} annotationContext={props.annotationContext} address={props.address + ":L" + elements.length}>{line}</Line>)
         }
         setContentElements(elements)
     }, [props.annotations, props.children, props.annotationContext?.selectedAnnotationAnchor])
@@ -420,7 +465,7 @@ function AnnotatedStringifiedJSON(props: { annotations: any, children: any, anno
     </span>
 }
 
-function Line(props: { children: any, annotationContext?: AnnotationContext, address?: string }) {
+function Line(props: { children: any, annotationContext?: AnnotationContext, address?: string, highlights?: GroupedAnnotation[] }) {
     // const [expanded, setExpanded] = useState(false)
     const annotationView = props.annotationContext?.annotationView
 
@@ -437,14 +482,20 @@ function Line(props: { children: any, annotationContext?: AnnotationContext, add
     }
     
     const expanded = props.address === props.annotationContext?.selectedAnnotationAnchor
+    const className = "line " + (props.highlights?.length ? "has-annotations" : "")
 
     if (!annotationView) {
-        return <span className="line">{props.children}</span>
+        return <span className={className}>{props.children}</span>
     }
 
     const InlineComponent: any = annotationView
+    const content = InlineComponent({ highlights: props.highlights, address: props.address })
     
-    return <span className="line"><span onClick={() => setExpanded(!expanded)}>{props.children}</span>{expanded && <div className="inline-line-editor">
-        <InlineComponent address={props.address} />
+    if (content === null) {
+        return <span className={className}>{props.children}</span>
+    }
+    
+    return <span className={className}><span onClick={() => setExpanded(!expanded)}>{props.children}</span>{expanded && <div className="inline-line-editor">
+        {content}
     </div>}</span>
 }
