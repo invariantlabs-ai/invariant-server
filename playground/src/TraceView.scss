@@ -208,6 +208,10 @@ body {
         &.highlight {
             background-color: var(--highlight-message);
         }
+
+        pre {
+            white-space: pre-wrap;
+        }
     }
 
     span.line {
@@ -300,10 +304,16 @@ div.inline-line-editor {
     position: relative;
     left: -5pt;
     padding-left: 5pt;
-    margin-top: 10pt;
+    margin-top: 5pt;
     margin-bottom: 10pt;
     width: calc(100% + 10pt);
-    padding: 10pt 5pt;
+    padding: 5pt 5pt;
+}
+
+.tool-call.highlight {
+    div.inline-line-editor {
+        background-color: rgb(247, 247, 247);
+    }
 }
 
 span.nl {

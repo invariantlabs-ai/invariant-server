@@ -235,10 +235,13 @@ const App = () => {
 
 function InlineAnnotationView(props: any) {
   return <>
-    <span>These are the annotation for:</span>
-    <pre>
-      {JSON.stringify(props, null, 2)}
-    </pre>
+  {/* on hover highlight border */}
+    <div className="bg-white p-4 rounded flex flex-col max-h-[100%] border">
+      <span>These are the annotation for:</span>
+      <pre>
+        {JSON.stringify(props, null, 2)}
+      </pre>
+    </div>
   </>
 }
 

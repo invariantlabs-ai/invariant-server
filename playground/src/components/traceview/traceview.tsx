@@ -116,13 +116,31 @@ interface RenderedTraceProps {
     annotationView?: React.ComponentType
 }
 
+interface RenderedTraceState {
+    error: Error | null;
+    parsed: any | null;
+    traceString: string;
+    selectedAnnotationAddress: string | null;
+}
+
+interface AnnotationContext {
+    selectedAnnotationAnchor: string | null
+    setSelection: (address: string | null) => void
+    annotationView?: React.ComponentType
+}
+
 // handles exceptions in the rendering pass, gracefully
-export class RenderedTrace extends React.Component<RenderedTraceProps, { error: Error | null, parsed: any | null, traceString: string }> {
+export class RenderedTrace extends React.Component<RenderedTraceProps, RenderedTraceState> {
     constructor(props: RenderedTraceProps) {
         super(props)
 
         // keep track of parsed trace, as well as the last parsed trace string (so we know when to re-parse)
-        this.state = {error: null, parsed: null, traceString: ""}
+        this.state = {
+            error: null, 
+            parsed: null, 
+            traceString: "",
+            selectedAnnotationAddress: null
+        }
     }
 
     componentDidUpdate(): void {
@@ -144,7 +162,6 @@ export class RenderedTrace extends React.Component<RenderedTraceProps, { error: 
     }
 
     render() {
-
         if (this.state.error) {
             return <div className="error">
                 <div>
@@ -159,9 +176,16 @@ export class RenderedTrace extends React.Component<RenderedTraceProps, { error: 
 
 
         try {
+            const annotationContext: AnnotationContext = {
+                annotationView: this.props.annotationView,
+                selectedAnnotationAnchor: this.state.selectedAnnotationAddress,
+                setSelection: (address: string | null) => {
+                    this.setState({ selectedAnnotationAddress: address })
+                }
+            }
             return <div className="traces">
                 {(this.state.parsed || []).map((item: any, index: number) => {
-                    return <MessageView key={index} index={index} message={item} annotations={this.props.annotations.for_path("messages." + index)} annotationView={this.props.annotationView} address={"messages[" + index + "]"} />
+                    return <MessageView key={index} index={index} message={item} annotations={this.props.annotations.for_path("messages." + index)} annotationContext={annotationContext} address={"messages[" + index + "]"} />
                 })}
             </div>
         } catch (e) {
@@ -179,7 +203,7 @@ interface MessageViewProps {
     message: any;
     index: number;
     annotations: AnnotatedJSON;
-    annotationView?: React.ComponentType
+    annotationContext?: AnnotationContext;
     address: string
 }
 
@@ -219,11 +243,12 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
                             </div>
                         </div>
                         <div className="tool-calls seamless">
-                            <ToolCallView tool_call={message} annotations={this.props.annotations} annotationView={this.props.annotationView} address={this.props.address} />
+                            <ToolCallView tool_call={message} annotations={this.props.annotations} annotationContext={this.props.annotationContext} address={this.props.address} />
                         </div>
                     </div>
                 }
 
+                // error message
                 return <div className={"message parser-error" + (isHighlighted ? "highlight" : "")}>
                     <div className="content error">
                         <p><b>Failed to render message #{this.props.index}</b>: Could not parse the following as a message or tool call. Every event requires either a "role" or "type" field.</p>
@@ -231,7 +256,7 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
                     </div>
                 </div>
             } else {
-                // standard message
+                // normal message (role + content and optional tool calls)
                 return <div className={"message " + (isHighlighted ? "highlight" : "")}>
                     {message.role && <div className="role">
                         {message.role}
@@ -239,10 +264,10 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
                             {this.props.address}
                         </div>
                     </div>}
-                    {message.content && <div className={"content " + message.role}> <Annotated annotations={this.props.annotations.for_path("content")} annotationView={this.props.annotationView} address={this.props.address + ".content"}>{message.content}</Annotated></div>}
+                    {message.content && <div className={"content " + message.role}> <Annotated annotations={this.props.annotations.for_path("content")} annotationContext={this.props.annotationContext} address={this.props.address + ".content"}>{message.content}</Annotated></div>}
                     {message.tool_calls && <div className={"tool-calls " + (message.content ? "" : " seamless")}>
                         {message.tool_calls.map((tool_call: any, index: number) => {
-                            return <ToolCallView key={index} tool_call={tool_call} annotations={this.props.annotations.for_path("tool_calls." + index)} annotationView={this.props.annotationView} address={this.props.address + ".tool_calls[" + index + "]"} />
+                            return <ToolCallView key={index} tool_call={tool_call} annotations={this.props.annotations.for_path("tool_calls." + index)} annotationContext={this.props.annotationContext} address={this.props.address + ".tool_calls[" + index + "]"} />
                         })}
                     </div>}
                 </div>
@@ -256,10 +281,9 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
 }
 
 
-function ToolCallView(props: { tool_call: any, annotations: any, annotationView?: React.ComponentType, address: string }) {
+function ToolCallView(props: { tool_call: any, annotations: any, annotationContext?: AnnotationContext, address: string }) {
     const tool_call = props.tool_call
     const annotations = props.annotations
-    const AnnotationView = props.annotationView
 
     if (tool_call.type != "function") {
         return <pre>{JSON.stringify(tool_call, null, 2)}</pre>
@@ -284,7 +308,7 @@ function ToolCallView(props: { tool_call: any, annotations: any, annotationView?
 
     return <div className={"tool-call " + (isHighlighted ? "highlight" : "")}>
         <div className="function-name">
-            <Annotated annotations={annotations.for_path("function.name")} annotationView={AnnotationView} address={props.address + ".function.name"}>
+            <Annotated annotations={annotations.for_path("function.name")} annotationContext={props.annotationContext} address={props.address + ".function.name"}>
                 {f.name || <span className="error">Could Not Parse Function Name</span>}
             </Annotated>
             <div className="address">
@@ -293,7 +317,7 @@ function ToolCallView(props: { tool_call: any, annotations: any, annotationView?
         </div>
         <div className="arguments">
             <pre>
-                <AnnotatedStringifiedJSON annotations={argumentAnnotations} annotationView={AnnotationView} address={props.address + ".function.arguments"}>{args}</AnnotatedStringifiedJSON>
+                <AnnotatedStringifiedJSON annotations={argumentAnnotations} annotationContext={props.annotationContext} address={props.address + ".function.arguments"}>{args}</AnnotatedStringifiedJSON>
             </pre>
         </div>
     </div>
@@ -307,14 +331,17 @@ function replaceNLs(content: string, key: string) {
     } else {
         let lines = content.split("\n")
         for (let i = 0; i < lines.length; i++) {
-            elements.push(<>{lines[i]}<span className="nl" key={key + '-ws-' + i}>↵</span>{"\n"}</>)
+            elements.push(lines[i])
+            elements.push(<span className="nl" key={'newline-' + key + '-ws-' + i}>↵</span>)
+            elements.push("\n")
         }
+        elements.pop()
         elements.pop()
         return elements
     }
 }
 
-function Annotated(props: { annotations: any, children: any, annotationView?: React.ComponentType, address?: string }) {
+function Annotated(props: { annotations: any, children: any, annotationContext?: AnnotationContext, address?: string }) {
     const [contentElements, setContentElements] = useState([] as any)
     const parentElement = useRef(null as any);
 
@@ -341,15 +368,15 @@ function Annotated(props: { annotations: any, children: any, annotationView?: Re
                     line.push(<span key={(elements.length) + "-" + (interval.start) + "-" + (interval.end)} className="annotated">{message_content}</span>)
                 }
             }
-            elements.push(<Line key={'line-' + elements.length} annotationView={props.annotationView} address={props.address + ":L" + elements.length}>{line}</Line>)
+            elements.push(<Line key={'line-' + elements.length} annotationContext={props.annotationContext} address={props.address + ":L" + elements.length}>{line}</Line>)
         }
         setContentElements(elements)
-    }, [props.annotations, props.children])
+    }, [props.annotations, props.children, props.annotationContext?.selectedAnnotationAnchor])
 
     return <span ref={parentElement} className="annotated-parent text">{contentElements}</span>
 }
 
-function AnnotatedStringifiedJSON(props: { annotations: any, children: any, annotationView?: React.ComponentType, address: string }) {
+function AnnotatedStringifiedJSON(props: { annotations: any, children: any, annotationContext?: AnnotationContext, address: string }) {
     const [contentElements, setContentElements] = useState([] as any)
     const parentElement = useRef(null as any);
 
@@ -383,26 +410,41 @@ function AnnotatedStringifiedJSON(props: { annotations: any, children: any, anno
                     </span>)
                 }
             }
-            elements.push(<Line key={'line-' + elements.length} annotationView={props.annotationView} address={props.address + ":L" + elements.length}>{line}</Line>)
+            elements.push(<Line key={'line-' + elements.length} annotationContext={props.annotationContext} address={props.address + ":L" + elements.length}>{line}</Line>)
         }
         setContentElements(elements)
-    }, [props.annotations, props.children])
+    }, [props.annotations, props.children, props.annotationContext?.selectedAnnotationAnchor])
    
     return <span ref={parentElement} className="annotated-parent">
         {contentElements}
     </span>
 }
 
-function Line(props: { children: any, annotationView?: React.ComponentType, address?: string }) {
-    const [expanded, setExpanded] = useState(false)
+function Line(props: { children: any, annotationContext?: AnnotationContext, address?: string }) {
+    // const [expanded, setExpanded] = useState(false)
+    const annotationView = props.annotationContext?.annotationView
+
+    const setExpanded = (state: boolean) => {
+        if (!props.address) {
+            return;
+        }
+
+        if (!state && props.address === props.annotationContext?.selectedAnnotationAnchor) {
+            props.annotationContext?.setSelection(null)
+        } else {
+            props.annotationContext?.setSelection(props.address)
+        }
+    }
     
-    if (!props.annotationView) {
+    const expanded = props.address === props.annotationContext?.selectedAnnotationAnchor
+
+    if (!annotationView) {
         return <span className="line">{props.children}</span>
     }
 
-    const InlineComponent: any = props.annotationView
+    const InlineComponent: any = annotationView
     
-    return <span className="line" onClick={() => setExpanded(!expanded)}>{props.children}{expanded && <div className="inline-line-editor">
+    return <span className="line"><span onClick={() => setExpanded(!expanded)}>{props.children}</span>{expanded && <div className="inline-line-editor">
         <InlineComponent address={props.address} />
     </div>}</span>
 }

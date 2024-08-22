@@ -39,11 +39,14 @@ function empty(): AnnotationMap {
  * Use `AnnotatedJSON.from_mappings` to create an instance from a list of annotations as shown below.
  */
 export class AnnotatedJSON {
-    data: any
+    // immutable representation of all annotations organized by path (do not modify directly)
     annotationsMap: AnnotationMap
+    // caches results of `for_path` calls to maintain as much shared state as possible (avoids re-rendering in react)
+    cachedSubs: Record<string, AnnotatedJSON>
 
     constructor(annotations: AnnotationMap) {
         this.annotationsMap = annotations as AnnotationMap
+        this.cachedSubs = {}
     }
 
     /**
@@ -54,19 +57,29 @@ export class AnnotatedJSON {
      */
     for_path(path: string): AnnotatedJSON {
         if (!this.annotationsMap) {
-            return new AnnotatedJSON(empty())
+            return EMPTY_ANNOTATIONS
         }
     
+        if (this.cachedSubs[path]) {
+            return this.cachedSubs[path]
+        }
+
         let tree = this.annotationsMap
 
         for (const key of path.split('.')) {
             if (!tree[key]) {
-                return new AnnotatedJSON(empty())
+                return EMPTY_ANNOTATIONS
             }
             tree = tree[key]
         }
-    
-        return new AnnotatedJSON(tree)
+        
+        if (Object.keys(tree).length <= 1) {
+            return EMPTY_ANNOTATIONS
+        }
+        
+        let sub = new AnnotatedJSON(tree)
+        this.cachedSubs[path] = sub
+        return sub
     }
 
     get rootAnnotations(): Annotation[] {
@@ -89,6 +102,10 @@ export class AnnotatedJSON {
      * 
      */
     static from_mappings(mappings: Record<string, string>) {
+        if (!mappings || Object.keys(mappings).length === 0) {
+            return EMPTY_ANNOTATIONS
+        }
+
         let annotationsMap = annotationsToMap(mappings)
         return new AnnotatedJSON(annotationsMap)
     }
@@ -161,9 +178,34 @@ export class AnnotatedJSON {
 
 
     static empty(): AnnotatedJSON {
-        return new AnnotatedJSON(empty())
+        return EMPTY_ANNOTATIONS
     }
 }
+
+// shared empty annotations instance
+class EmptyAnnotations extends AnnotatedJSON {
+    constructor() {
+        super(empty())
+    }
+
+    for_path(_path: string): AnnotatedJSON {
+        return this
+    }
+
+    get rootAnnotations(): Annotation[] {
+        return []
+    }
+
+    in_text(_object_string: string): Annotation[] {
+        return []
+    }
+
+    toString(): string {
+        return "EmptyAnnotations"
+    }
+}
+
+export const EMPTY_ANNOTATIONS = new EmptyAnnotations()
 
 /**
  * Turns a list of {start, end, content} items into a list of fully separated intervals, where the list of
