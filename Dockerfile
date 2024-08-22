@@ -39,6 +39,8 @@ RUN curl https://semgrep.dev/c/r/python.lang.security -s -o /tmp/python.lang.sec
 COPY server ./server
 COPY --from=frontend-builder /app/dist ./playground/dist
 
+RUN chown -R app:app /home/app/server/logs
+
 EXPOSE 8000
 
 CMD ["rye", "run", "uvicorn", "server.main:app", "--host", "0.0.0.0"]
