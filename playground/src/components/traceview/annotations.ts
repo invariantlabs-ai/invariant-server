@@ -73,7 +73,7 @@ export class AnnotatedJSON {
             tree = tree[key]
         }
         
-        if (Object.keys(tree).length <= 1) {
+        if (tree.$annotations?.length === 0 && Object.keys(tree).length === 1) {
             return EMPTY_ANNOTATIONS
         }
         
