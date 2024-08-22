@@ -249,6 +249,79 @@ raise PolicyViolation("A web result contains 'France'", call=result) if:
       2
     ),
   },
+  {
+    name: "Syntax error",
+    description: "Check agent trace for syntax errors",
+    policy: `from invariant.detectors.code import ipython_code
+
+raise "syntax error" if:
+    (call1: ToolCall) -> (call2: ToolCall)
+    call1.function.name == "ipython"
+    ipython_code(call1.function.arguments["arg"]).syntax_error
+    call2.function.name == "ipython"
+    ipython_code(call2.function.arguments["arg"]).syntax_error`,
+    input: JSON.stringify(
+      [
+        {
+          role: "user",
+          content:
+            'A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user\'s questions.\nThe assistant can interact with an interactive Python (Jupyter Notebook) environment and receive the corresponding output when needed. The code should be enclosed using "<execute_ipython>" tag, for example:\n<execute_ipython>\nprint("Hello World!")\n</execute_ipython>\nThe assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.\nFor example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.\nThe assistant can browse the Internet with commands on behalf of the user by wrapping them with <execute_browse> and </execute_browse>.\nFor example, you can browse a given URL by <execute_browse> goto("<URL>") </execute_browse>.\nThe assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.\nThe assistant can install Python packages through bash by <execute_bash> pip install [package needed] </execute_bash> and should always import packages and define variables before starting to use them.\nThe assistant should stop <execute> and provide an answer when they have already obtained the answer from the execution result.\nThe assistant\'s response should be concise.\nYou should include <execute_ipython> or <execute_bash> or <execute_browse> in every one of your responses, unless you are finished with the task or need more input or action from the user in order to proceed.\nIMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> instead of providing it.\nIf the assistant want to give user an answer, it should use <solution> YOUR_SOLUTION_HERE </solution>.\nFor example: The answer to the question is <solution> 42 </solution>.',
+        },
+        { role: "user", content: "Task:\nWhich university is located further north, Lehigh University or North Carolina State University?" },
+        {
+          role: "assistant",
+          content: "To determine which university is located further north, we need to find the latitude coordinates of both universities.\n",
+          tool_calls: [{ id: "2", type: "function", function: { name: "ipython", arguments: { arg: " print(wikipedia_search('Lehigh University')) " } } }],
+        },
+        {
+          role: "user",
+          content:
+            "OBSERVATION:\nPage: Lehigh University\nSummary: Lehigh University (LU) is a private research university in Bethlehem, Pennsylvania, in the Lehigh Valley region of eastern Pennsylvania. The university was established in 1865 by businessman Asa Packer and was originally affiliated with the Episcopal Church. Lehigh University's undergraduate programs have been coeducational since the 1971\u201372 academic year. As of 2019, the university had 5,047 undergraduate students and 1,802 graduate students.Lehigh has five colleges: the P.C. Rossin College of Engineering and Applied Science, the College of Arts and Sciences, the College of Business, the College of Education, and the College of Health. The College of Arts and Sciences is the largest, with 35% of the university's students. The university offers the Bachelor of Arts, Bachelor of Science, Master of Arts, Master of Science, Master of Business Administration, Master of Engineering, Master of Education, and Doctor of Philosophy degrees. It is classified amon\nYou have 4 steps left and 2 chances to propose solution left.",
+        },
+        {
+          role: "assistant",
+          content: "Unfortunately, the Wikipedia search for Lehigh University did not provide the latitude coordinates. Let's try searching for North Carolina State University instead.\n",
+          tool_calls: [{ id: "4", type: "function", function: { name: "ipython", arguments: { arg: " print(wikipedia_search('North Carolina State University')) " } } }],
+        },
+        {
+          role: "user",
+          content:
+            'OBSERVATION:\nPage: North Carolina State University\nSummary: North Carolina State University (NC State, North Carolina State, NC State University, or NCSU) is a public land-grant research university in Raleigh, North Carolina, United States. Founded in 1887 and part of the University of North Carolina system, it is the largest university in the Carolinas. The university forms one of the corners of the Research Triangle together with Duke University in Durham and the University of North Carolina at Chapel Hill. It is classified among "R1: Doctoral Universities \u2013 Very high research activity".The North Carolina General Assembly established the North Carolina College of Agriculture and Mechanic Arts, now NC State, on March 7, 1887, originally as a land-grant college. The college underwent several name changes and officially became North Carolina State University at Raleigh in 1965. However, by longstanding convention, the "at Raleigh" portion is usually omitted. Today, NC State has an enrollment of more\nYou have 3 steps left and 2 chances to propose solution left.',
+        },
+        {
+          role: "assistant",
+          content:
+            "Unfortunately, the Wikipedia search for North Carolina State University also did not provide the latitude coordinates. Since we don't have the latitude coordinates for either university, we cannot determine which one is further north based on this information. We would need to find the latitude coordinates from another source or use a mapping tool to compare their locations.\n<solution> We cannot determine which university is located further north without the latitude coordinates. </solution>",
+          tool_calls: [],
+        },
+        { role: "user", content: "OBSERVATION:\nYour answer is wrong.\nYou have 2 steps left and 1 chances to propose solution left." },
+        {
+          role: "assistant",
+          content:
+            "I apologize for the incorrect response. Let's try a different approach to determine which university is located further north. We can use the latitude coordinates of the universities to compare their locations.\n",
+          tool_calls: [
+            {
+              id: "8",
+              type: "function",
+              function: {
+                name: "ipython",
+                arguments: {
+                  arg: '\n# Latitude coordinates of Lehigh University: 40.6075\u00b0 N\n# Latitude coordinates of North Carolina State University: 35.7872\u00b0 N\n\nlehigh_latitude = 40.6075\nncsu_latitude = 35.7872\n\nif lehigh_latitude > ncsu_latitude:\n    print("Lehigh University is located further north.")\nelse:\n    print("North Carolina State University is located further north.")\n',
+                },
+              },
+            },
+          ],
+        },
+        {
+          role: "user",
+          content: "OBSERVATION:\nLehigh University is located further north.\nYou have 1 steps left and 1 chances to propose solution left.\nYou should take the last step to propose a solution.",
+        },
+        { role: "assistant", content: "The university located further north is <solution> Lehigh University </solution>.", tool_calls: [] },
+      ],
+      null,
+      2
+    ),
+  },
   /*{
     name: "Personal Identifiable Information",
     description: "Prevent personal identifiable information from being leaked",
