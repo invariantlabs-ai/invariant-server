@@ -7,6 +7,7 @@ from prometheus_fastapi_instrumentator import Instrumentator, metrics
 from prometheus_fastapi_instrumentator.metrics import Info
 from prometheus_client import Gauge
 from contextlib import asynccontextmanager
+from server import logging
 import psutil
 import hashlib
 
@@ -19,6 +20,7 @@ class HashRequestBodyMiddleware(BaseHTTPMiddleware):
 
         # Add the hash to the request state
         request.state.body_hash = body_hash
+        request.state.body_content = body
 
         # Proceed with the request
         response = await call_next(request)
@@ -27,6 +29,7 @@ class HashRequestBodyMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await logging.init()
     ipc = get_ipc_controller()
     yield
     ipc.close()
@@ -39,22 +42,28 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
 def system_usage():
-    SYSTEM_USAGE = Gauge('invariant_server_system_usage',
-    'Hold current system resource usage',
-    ['resource_type'])
+    SYSTEM_USAGE = Gauge(
+        "invariant_server_system_usage",
+        "Hold current system resource usage",
+        ["resource_type"],
+    )
 
     def instrumentation(_: Info) -> None:
         virtual_memory = psutil.virtual_memory()
-        SYSTEM_USAGE.labels('CPU').set(psutil.cpu_percent())
-        SYSTEM_USAGE.labels('Memory').set(virtual_memory.percent)
+        SYSTEM_USAGE.labels("CPU").set(psutil.cpu_percent())
+        SYSTEM_USAGE.labels("Memory").set(virtual_memory.percent)
 
     return instrumentation
 
-Instrumentator(excluded_handlers=["/metrics"]).add(metrics.default(
-    metric_namespace="invariant",
-    metric_subsystem="server",
-)).add(
+
+Instrumentator(excluded_handlers=["/metrics"]).add(
+    metrics.default(
+        metric_namespace="invariant",
+        metric_subsystem="server",
+    )
+).add(
     metrics.request_size(
         metric_namespace="invariant",
         metric_subsystem="server",
