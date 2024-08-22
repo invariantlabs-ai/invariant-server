@@ -224,6 +224,31 @@ export const someConst = false;`,
       2
     ),
   },
+  {
+    name: "Email address",
+    description: "Prevent email addresses from being leaked in tool calls",
+    policy: `# make sure the agent never leaks the user's email via search_web
+raise PolicyViolation("User's email address was leaked", call=call) if:
+    (call: ToolCall)
+    call is tool:search_web
+    "@mail.com" in call.function.arguments.q
+
+# web results should not contain 'France'
+raise PolicyViolation("A web result contains 'France'", call=result) if:
+    (result: ToolOutput)
+    result is tool:search_web
+    "France" in result.content`,
+    input: JSON.stringify(
+      [
+        { role: "system", content: "You are a helpful assistant. Your user is signed in as bob@mail.com" },
+        { role: "user", content: "Please do some research on Paris." },
+        { role: "assistant", content: null, tool_calls: [{ id: "1", type: "function", function: { name: "search_web", arguments: { q: "bob@mail.com want's to know about Paris" } } }] },
+        { role: "tool", tool_call_id: "1", content: "Paris is the capital of France." },
+      ],
+      null,
+      2
+    ),
+  },
   /*{
     name: "Personal Identifiable Information",
     description: "Prevent personal identifiable information from being leaked",
