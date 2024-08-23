@@ -2,13 +2,7 @@ import React, { useState } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandInput, CommandList, CommandItem } from "@/components/ui/command";
 import { ChevronDown } from "lucide-react";
-
-interface Example {
-  name: string;
-  policy: string;
-  input: string;
-  description?: string; // Add an optional description field
-} 
+import { Example } from "@/examples";
 
 interface ExamplesProps {
   examples: Example[];

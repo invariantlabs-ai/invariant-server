@@ -27,10 +27,10 @@ interface Error {
 }
 
 const App = () => {
-  const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[1].policy);
-  const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || examples[1].input);
+  const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[1].policy || "");
+  const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || examples[1].input || "");
   const { toast } = useToast();
-  
+
   // output and ranges
   const [loading, setLoading] = useState<boolean>(false);
   const [output, setOutput] = useState<string>("");
@@ -99,7 +99,7 @@ const App = () => {
       });
 
       const analysisResult: string | AnalysisResult = await analyzeResponse.json();
-      
+
       // check for error messages
       if (typeof analysisResult === "string") {
         setOutput(clearTerminalControlCharacters(analysisResult));
@@ -111,9 +111,9 @@ const App = () => {
       const annotations: Record<string, string> = {};
       analysisResult.errors.forEach((e: Error) => {
         e.ranges.forEach((r: string) => {
-          annotations[r] = e["error"]
-        })
-      })
+          annotations[r] = e["error"];
+        });
+      });
       setRanges(annotations);
       setOutput(JSON.stringify(analysisResult, null, 2));
     } catch (error) {
@@ -200,7 +200,7 @@ const App = () => {
           <ResizablePanel className="flex-1 flex flex-col">
             <div className="flex-1 flex flex-col">
               <h2 className="font-bold mb-2 m-2">POLICY</h2>
-              <PolicyEditor height="100%" defaultLanguage="python" value={policyCode} onChange={(value: any) => setPolicyCode(value || "")} theme="vs-light" />
+              <PolicyEditor height="100%" defaultLanguage="python" value={policyCode} onChange={(value: string) => setPolicyCode(value || "")} theme="vs-light" />
             </div>
           </ResizablePanel>
 
@@ -209,7 +209,7 @@ const App = () => {
           <ResizablePanel className="flex-1">
             <ResizablePanelGroup direction="vertical">
               <ResizablePanel className="flex-1 flex flex-col" defaultSize={65}>
-              <TraceView inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={InlineAnnotationView} />
+                <TraceView inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={InlineAnnotationView} />
               </ResizablePanel>
 
               <ResizableHandle className="h-2 bg-gray-300 hover:bg-gray-500" />
@@ -242,25 +242,31 @@ function InlineAnnotationView(props: any) {
   if ((props.highlights || []).length === 0) {
     return null;
   }
-  return <>
-  {/* on hover highlight border */}
-    <div className="bg-white p-4 rounded flex flex-col max-h-[100%] border">
-      {/* <span>These are the annotation for:</span> */}
-      {/* <pre>
+  return (
+    <>
+      {/* on hover highlight border */}
+      <div className="bg-white p-4 rounded flex flex-col max-h-[100%] border">
+        {/* <span>These are the annotation for:</span> */}
+        {/* <pre>
         {JSON.stringify(props, null, 2)}
       </pre> */}
-      <ul>
-      {(props.highlights || []).map((highlight: any, index: number) => {
-        return <li key={'highlight-' + index}>
-          {/* <span>{highlight.snippet}</span><br/> */}
-          <span>{highlight.content.map((c: any, i: number) => {
-            return <span key={'content-' + i}>{c}</span>
-          })}</span>
-        </li>
-      })}
-      </ul>
-    </div>
-  </>
+        <ul>
+          {(props.highlights || []).map((highlight: any, index: number) => {
+            return (
+              <li key={"highlight-" + index}>
+                {/* <span>{highlight.snippet}</span><br/> */}
+                <span>
+                  {highlight.content.map((c: any, i: number) => {
+                    return <span key={"content-" + i}>{c}</span>;
+                  })}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </>
+  );
 }
 
 function PolicyEditor(props: any) {
