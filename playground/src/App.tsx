@@ -268,7 +268,17 @@ function InlineAnnotationView(props: any) {
 }
 
 function PolicyEditor(props: any) {
-  return <Editor height="100%" defaultLanguage="python" theme="vs-light" {...props} />;
+  return <Editor height="100%" defaultLanguage="python" theme="vs-light" options={{
+    wordWrap: "on",
+    minimap: { enabled: false },
+    scrollBeyondLastLine: false,
+    overviewRulerLanes: 0,
+        hideCursorInOverviewRuler: true,
+        scrollbar: {
+            vertical: 'auto'
+        },
+        overviewRulerBorder: false,    
+  }} {...props} />;
 }
 
 export default App;
