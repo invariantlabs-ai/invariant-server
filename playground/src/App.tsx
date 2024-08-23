@@ -36,8 +36,6 @@ const App = () => {
   const [output, setOutput] = useState<string>("");
   const [ranges, setRanges] = useState<Record<string, string>>({});
 
-  console.log(examples);
-
   const isDigit = (str: string) => {
     return /^\d+$/.test(str);
   };
