@@ -27,8 +27,8 @@ interface Error {
 }
 
 const App = () => {
-  const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[0].policy);
-  const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || examples[0].input);
+  const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[1].policy);
+  const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || examples[1].input);
   const { toast } = useToast();
   
   // output and ranges
@@ -146,6 +146,9 @@ const App = () => {
     if (exampleIndex < 0 || exampleIndex >= examples.length) return;
 
     const selectedExample = examples[exampleIndex];
+
+    if (!selectedExample.policy || !selectedExample.input) return;
+
     setPolicyCode(selectedExample.policy);
     setOutput("");
     setRanges({});
