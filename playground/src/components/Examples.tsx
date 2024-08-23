@@ -38,12 +38,14 @@ const Examples: React.FC<ExamplesProps> = ({ examples, onSelect }) => {
           <CommandInput placeholder="Search examples..." />
           <CommandList>
             {examples.map((example, index) => (
+              (example.policy ? 
               <CommandItem key={index} onSelect={() => handleSelect(index)} className="flex flex-col items-start">
                 <span>{example.name}</span>
                 {example.description && (
                   <span className="text-xs text-gray-500">{example.description}</span>
                 )}
               </CommandItem>
+              : <CommandItem key={index} disabled={true}><span>{example.name}</span></CommandItem>)
             ))}
           </CommandList>
         </Command>
