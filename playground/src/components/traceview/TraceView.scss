@@ -166,7 +166,6 @@ body {
     }
 
     .role {
-        border-bottom: 1pt solid var(--border-color);
         padding: 4pt 5pt;
         text-transform: uppercase;
         font-weight: bold;
@@ -177,9 +176,30 @@ body {
         color: rgba(0, 0, 0, 0.587);
         font-size: 0.7em;
         position: relative;
+        cursor: pointer;
+        
+        svg {
+            display: inline-block;
+            position: relative;
+            top: -1pt;
+            margin-right: 2pt;
+        }
+        
+        svg:last-of-type {
+            margin-right: 3pt;
+        }
 
         &.seamless {
             border-bottom: none;
+        }
+
+        span.badge {
+            color: rgba(0, 0, 0, 0.565);
+            margin-left: 5pt;
+            padding: 2pt;
+            border-radius: 3pt;
+            text-transform: none;
+            font-size: 0.8em;
         }
     }
 
@@ -215,7 +235,9 @@ body {
     }
 
     span.line {
-        &.has-annotations:hover {
+        cursor: pointer;
+
+        &:hover {
             background-color: rgba(0, 0, 0, 0.07);
             padding: 2pt 0pt;
             border-radius: 2pt;
@@ -296,20 +318,6 @@ body {
     }
 }
 
-div.inline-line-editor {
-    width: calc(100% + 4pt);
-    background-color: var(--secondary-background-color);
-    border-top: 1pt solid var(--border-color);
-    border-bottom: 1pt solid var(--border-color);
-    position: relative;
-    left: -5pt;
-    padding-left: 5pt;
-    margin-top: 5pt;
-    margin-bottom: 10pt;
-    width: calc(100% + 10pt);
-    padding: 5pt 5pt;
-}
-
 .tool-call.highlight {
     div.inline-line-editor {
         background-color: rgb(247, 247, 247);
@@ -356,4 +364,19 @@ table.json {
     tr td {
         padding-left: 7pt;
     }
+}
+
+
+div.inline-line-editor {
+    width: calc(100% + 4pt);
+    background-color: var(--secondary-background-color);
+    border-top: 1pt solid var(--border-color);
+    border-bottom: 1pt solid var(--border-color);
+    position: relative;
+    left: -5pt;
+    padding-left: 5pt;
+    margin-top: 5pt;
+    margin-bottom: 10pt;
+    width: calc(100% + 10pt);
+    padding: 5pt 5pt;
 }
