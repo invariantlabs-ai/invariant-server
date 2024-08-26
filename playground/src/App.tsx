@@ -294,12 +294,12 @@ function PolicyViolation({ title, result, ranges, setScroll }) {
       style={{ width: "calc(100% - 20px)" }}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-black flex items-center">
+        <h2 className="text-xl font-semibold text-black flex items-center select-none">
           {title === "Policy Violation" ? (<BsExclamationTriangle className="mr-2" />) : <BsCheckCircle className="mr-2" />}
           {title}
         </h2>
         { result.ranges.length > 0 && (
-        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-indigo-500 rounded-full">
+        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-indigo-500 rounded-full select-none">
           {counter % result.ranges.length + 1}/{result.ranges.length}
         </span>
         ) }
