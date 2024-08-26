@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/components/ui/use-toast";
@@ -6,9 +6,12 @@ import Editor from "@monaco-editor/react";
 import InvariantLogoIcon from "@/assets/logo";
 import Examples from "@/components/Examples";
 import examples from "@/examples";
-import { TraceView } from "./components/traceview/traceview";
-import Spinning from "./assets/spinning";
+import { TraceView } from "@/components/traceview/traceview";
+import Spinning from "@/assets/spinning";
 import { Base64 } from "js-base64";
+import { cn } from "@/lib/utils";
+import React from "react";
+import { BsCheckCircle, BsExclamationTriangle } from "react-icons/bs";
 
 function clearTerminalControlCharacters(str: string) {
   // remove control characters like [31m
@@ -29,11 +32,12 @@ interface Error {
 const App = () => {
   const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[1].policy || "");
   const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || examples[1].input || "");
+  const traceViewRef = useRef(null);
   const { toast } = useToast();
 
   // output and ranges
   const [loading, setLoading] = useState<boolean>(false);
-  const [output, setOutput] = useState<string>("");
+  const [output, setOutput] = useState<string | object>("");
   const [ranges, setRanges] = useState<Record<string, string>>({});
 
   const isDigit = (str: string) => {
@@ -77,10 +81,15 @@ const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const setScroll = function (position: "top" | number) {
+    if (traceViewRef.current) traceViewRef.current.setScroll(position);
+  };
+
   const handleEvaluate = async () => {
     setLoading(true); // Start loading
     setOutput(""); // Clear previous output
     setRanges({}); // Clear previous ranges
+    setScroll("top");
 
     try {
       // Save policy and input to localStorage
@@ -113,7 +122,8 @@ const App = () => {
         });
       });
       setRanges(annotations);
-      setOutput(JSON.stringify(analysisResult, null, 2));
+      //setOutput(JSON.stringify(analysisResult, null, 2));
+      setOutput(analysisResult);
     } catch (error) {
       console.error("Failed to evaluate policy:", error);
       setRanges({});
@@ -207,7 +217,7 @@ const App = () => {
           <ResizablePanel className="flex-1">
             <ResizablePanelGroup direction="vertical">
               <ResizablePanel className="flex-1 flex flex-col" defaultSize={65}>
-                <TraceView inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={InlineAnnotationView} />
+                <TraceView ref={traceViewRef} inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={InlineAnnotationView} />
               </ResizablePanel>
 
               <ResizableHandle className="h-2 bg-gray-300 hover:bg-gray-500" />
@@ -221,7 +231,29 @@ const App = () => {
                         <Spinning />
                       </div>
                     ) : (
-                      <div className="flex-1 overflow-y-auto whitespace-pre-wrap break-words">{output}</div>
+                      <div className="flex-1 overflow-y-auto whitespace-pre-wrap break-words">
+                        {typeof output === "string"
+                          ? output
+                          : output.errors.length > 0 ? output.errors.reduce(
+                              (acc, result, key) => {
+                                for (const range of result.ranges) {
+                                  if (acc.ranges[range] === undefined) {
+                                    acc.ranges[range] = acc.currentIndex;
+                                    acc.currentIndex++;
+                                  }
+                                }
+                                acc.components.push(
+                                  <React.Fragment key={key}>
+                                    <PolicyViolation title={"Policy Violation"} result={result} ranges={acc.ranges} setScroll={setScroll} />
+                                  </React.Fragment>
+                                );
+                                return acc;
+                              },
+                              { currentIndex: 0, components: [], ranges: {} }
+                            ).components
+                            : <PolicyViolation title={"OK"} result={{error:"No policy violations were detected", ranges:[]}} ranges={{}} setScroll={() => {}} />
+                          }
+                      </div>
                     )}
                   </div>
                 </div>
@@ -235,6 +267,47 @@ const App = () => {
     </div>
   );
 };
+
+function PolicyViolation({ title, result, ranges, setScroll }) {
+  const [counter, setCounter] = useState(result.ranges.length-1);
+  const [clicked, setClicked] = useState(false);
+
+  const handleClick = () => {
+    const len = result.ranges.length;
+    if (len === 0) return;
+    if (len === 1) { setScroll(ranges[result.ranges[0]]); return; }
+    setCounter((counter + 1) % len);
+    setClicked(true);
+  };
+
+  useEffect(() => {
+    if (!clicked) return;
+    setScroll(ranges[result.ranges[counter]]);
+  }, [counter, clicked]);
+
+  const text = result.error;//result.error.split("PolicyViolation(").slice(-1)[0].split(", ranges=")[0];
+
+  return (
+    <div
+      onClick={handleClick}
+      className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow m-[10px] mb-[20px] cursor-pointer"
+      style={{ width: "calc(100% - 20px)" }}
+    >
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-black flex items-center">
+          {title === "Policy Violation" ? (<BsExclamationTriangle className="mr-2" />) : <BsCheckCircle className="mr-2" />}
+          {title}
+        </h2>
+        { result.ranges.length > 0 && (
+        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-indigo-500 rounded-full">
+          {counter % result.ranges.length + 1}/{result.ranges.length}
+        </span>
+        ) }
+      </div>
+      <div className="mt-2 text-sm text-black bg-gray-50 p-3 rounded-lg overflow-auto">{text}</div>
+    </div>
+  );
+}
 
 function InlineAnnotationView(props: any) {
   if ((props.highlights || []).length === 0) {
@@ -268,17 +341,25 @@ function InlineAnnotationView(props: any) {
 }
 
 function PolicyEditor(props: any) {
-  return <Editor height="100%" defaultLanguage="python" theme="vs-light" options={{
-    wordWrap: "on",
-    minimap: { enabled: false },
-    scrollBeyondLastLine: false,
-    overviewRulerLanes: 0,
+  return (
+    <Editor
+      height="100%"
+      defaultLanguage="python"
+      theme="vs-light"
+      options={{
+        wordWrap: "on",
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        overviewRulerLanes: 0,
         hideCursorInOverviewRuler: true,
         scrollbar: {
-            vertical: 'auto'
+          vertical: "auto",
         },
-        overviewRulerBorder: false,    
-  }} {...props} />;
+        overviewRulerBorder: false,
+      }}
+      {...props}
+    />
+  );
 }
 
 export default App;

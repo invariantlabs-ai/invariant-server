@@ -18,9 +18,24 @@ interface TraceViewProps {
     annotationView?: React.ComponentType
 }
 
-export function TraceView(props: TraceViewProps) {
+export const TraceView = React.forwardRef((props: TraceViewProps, ref) => {
     const { inputData, handleInputChange, annotations } = props;
     const [annotatedJSON, setAnnotatedJSON] = useState<AnnotatedJSON | null>(null);
+    const traceEditorRef = useRef(null);
+    const renderedTraceRef = useRef(null);
+
+    React.useImperativeHandle(ref, () => ({
+      setScroll(position: "top" | string) {
+        if (traceEditorRef.current) {
+          traceEditorRef.current.setScroll(position);
+        }
+        if (renderedTraceRef.current) {
+          if (position === "top") {
+            renderedTraceRef.current.scrollTo(0, 0);
+          }
+        }
+      }
+    }));
     
     const [mode, setMode] = useState<"input" | "trace">("trace");
     
@@ -44,27 +59,44 @@ export function TraceView(props: TraceViewProps) {
         </h2>
         {!sideBySide && <div className={"content"}>
             <div className={"tab" + (mode === "input" ? " active" : "")}>
-                <TraceEditor inputData={inputData} handleInputChange={handleInputChange} annotations={annotatedJSON || AnnotatedJSON.empty()} />
+                <TraceEditor ref={traceEditorRef} inputData={inputData} handleInputChange={handleInputChange} annotations={annotatedJSON || AnnotatedJSON.empty()} />
             </div>
-            <div className={"tab traces " + (mode === "trace" ? " active" : "")}>
+            <div className={"tab traces " + (mode === "trace" ? " active" : "")} ref={renderedTraceRef}>
                 <RenderedTrace trace={inputData} annotations={annotatedJSON || AnnotatedJSON.empty()} annotationView={props.annotationView} />
             </div>
         </div>}
         {sideBySide && <div className="sidebyside">
             <div className="side">
-                <TraceEditor inputData={inputData} handleInputChange={handleInputChange} annotations={annotatedJSON || AnnotatedJSON.empty()} />
+                <TraceEditor ref={traceEditorRef} inputData={inputData} handleInputChange={handleInputChange} annotations={annotatedJSON || AnnotatedJSON.empty()} />
             </div>
-            <div className="traces side">
+            <div className="traces side" ref={renderedTraceRef}>
                 <RenderedTrace trace={inputData} annotations={annotatedJSON || AnnotatedJSON.empty()} annotationView={props.annotationView} />
             </div>
         </div>}
     </div>
-}
+});
 
-export function TraceEditor(props: { inputData: string, handleInputChange: (value: string | undefined) => void, annotations: AnnotatedJSON }) {
+export const TraceEditor = React.forwardRef((props: { inputData: string, handleInputChange: () => void, annotations: AnnotatedJSON }, ref) => {
     const [editor, setEditor] = useState(null as any)
     const [monaco, setMonaco] = useState(null as any)
     const [editorDecorations, setEditorDecorations] = useState([] as any)
+
+    React.useImperativeHandle(ref, () => ({
+        setScroll(position: "top" | number) {
+            if (editor) {
+                if (position === "top") {
+                  editor.setScrollPosition({scrollTop: 0});
+                } else {
+                  let annotation = props.annotations.for_path("messages").in_text(props.inputData)[position]
+                  if (!annotation) return;
+                  let pos = editor.getModel().getPositionAt(annotation.start);
+                  if (!pos) return;
+                  editor.revealLineInCenter(pos.lineNumber);
+                  editor.setPosition({column:pos.columnNumber || 1, lineNumber: pos.lineNumber});
+                }
+            }
+        }
+    }));
 
     // when annotations or pointers change, re-create the highlighted ranges from new sourcemap and annotations
     useEffect(() => {
@@ -109,7 +141,7 @@ export function TraceEditor(props: { inputData: string, handleInputChange: (valu
         theme: "vs-light",
         
     }} />
-}
+});
 
 interface RenderedTraceProps {
     trace: string;
@@ -184,7 +216,7 @@ export class RenderedTrace extends React.Component<RenderedTraceProps, RenderedT
                     this.setState({ selectedAnnotationAddress: address })
                 }
             }
-            return <div className="traces">
+            return <div className="traces" ref={this.tracesRef}>
                 {(this.state.parsed || []).map((item: any, index: number) => {
                     return <MessageView key={index} index={index} message={item} annotations={this.props.annotations.for_path("messages." + index)} annotationContext={annotationContext} address={"messages[" + index + "]"} />
                 })}
