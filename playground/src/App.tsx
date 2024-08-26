@@ -289,22 +289,21 @@ function PolicyViolation({ title, result, ranges, setScroll }) {
 
   return (
     <div
-      onClick={handleClick}
-      className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow m-[10px] mb-[20px] cursor-pointer"
+      className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow m-[10px] mb-[20px]"
       style={{ width: "calc(100% - 20px)" }}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-black flex items-center select-none">
+        <h2 className="text-xl font-semibold text-black flex items-center select-none cursor-pointer" onClick={handleClick}>
           {title === "Policy Violation" ? (<BsExclamationTriangle className="mr-2" />) : <BsCheckCircle className="mr-2" />}
           {title}
         </h2>
         { result.ranges.length > 0 && (
-        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-indigo-500 rounded-full select-none">
+        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-indigo-500 rounded-full select-none cursor-pointer" onClick={handleClick}>
           {counter % result.ranges.length + 1}/{result.ranges.length}
         </span>
         ) }
       </div>
-      <div className="mt-2 text-sm text-black bg-gray-50 p-3 rounded-lg overflow-auto">{text}</div>
+      <div onClick={(e) => {e.stopPropagation();}} className="mt-2 text-sm text-black bg-gray-50 p-3 rounded-lg overflow-auto cursor-text">{text}</div>
     </div>
   );
 }
