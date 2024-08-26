@@ -6,10 +6,9 @@ import Editor from "@monaco-editor/react";
 import InvariantLogoIcon from "@/assets/logo";
 import Examples from "@/components/Examples";
 import examples from "@/examples";
-import { TraceView } from "@/components/traceview/traceview";
+import { TraceView, ScrollHandle, Highlight } from "@/components/traceview/traceview";
 import Spinning from "@/assets/spinning";
 import { Base64 } from "js-base64";
-import { cn } from "@/lib/utils";
 import React from "react";
 import { BsCheckCircle, BsExclamationTriangle } from "react-icons/bs";
 
@@ -32,12 +31,12 @@ interface Error {
 const App = () => {
   const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[1].policy || "");
   const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || examples[1].input || "");
-  const traceViewRef = useRef(null);
+  const traceViewRef = useRef<ScrollHandle>(null);
   const { toast } = useToast();
 
   // output and ranges
   const [loading, setLoading] = useState<boolean>(false);
-  const [output, setOutput] = useState<string | object>("");
+  const [output, setOutput] = useState<string | AnalysisResult>("");
   const [ranges, setRanges] = useState<Record<string, string>>({});
 
   const isDigit = (str: string) => {
@@ -208,7 +207,7 @@ const App = () => {
           <ResizablePanel className="flex-1 flex flex-col">
             <div className="flex-1 flex flex-col">
               <h2 className="font-bold mb-2 m-2">POLICY</h2>
-              <PolicyEditor height="100%" defaultLanguage="python" value={policyCode} onChange={(value: string) => setPolicyCode(value || "")} theme="vs-light" />
+              <PolicyEditor height="100%" defaultLanguage="python" value={policyCode} onChange={(value?: string) => setPolicyCode(value || "")} theme="vs-light" />
             </div>
           </ResizablePanel>
 
@@ -235,7 +234,7 @@ const App = () => {
                         {typeof output === "string"
                           ? output
                           : output.errors.length > 0 ? output.errors.reduce(
-                              (acc, result, key) => {
+                              (acc: {currentIndex: number, ranges: Record<string, number>, components: React.ReactElement[]}, result, key) => {
                                 for (const range of result.ranges) {
                                   if (acc.ranges[range] === undefined) {
                                     acc.ranges[range] = acc.currentIndex;
@@ -268,7 +267,14 @@ const App = () => {
   );
 };
 
-function PolicyViolation({ title, result, ranges, setScroll }) {
+type PolicyViolationProps = {
+  title: string;
+  result: Error;
+  ranges: Record<string, number>;
+  setScroll: (position: "top" | number, path?: string) => void;
+};
+
+function PolicyViolation({ title, result, ranges, setScroll }: PolicyViolationProps) {
   const [counter, setCounter] = useState(result.ranges.length-1);
   const [clicked, setClicked] = useState(false);
 
@@ -283,6 +289,7 @@ function PolicyViolation({ title, result, ranges, setScroll }) {
   useEffect(() => {
     if (!clicked) return;
     setScroll(ranges[result.ranges[counter]], result.ranges[counter]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [counter, clicked]);
 
   const text = result.error;//result.error.split("PolicyViolation(").slice(-1)[0].split(", ranges=")[0];
@@ -308,10 +315,11 @@ function PolicyViolation({ title, result, ranges, setScroll }) {
   );
 }
 
-function InlineAnnotationView(props: any) {
+function InlineAnnotationView(props: {address: string, highlights: Highlight[]}) {
   if ((props.highlights || []).length === 0) {
     return null;
   }
+  console.log(props.highlights)
   return (
     <>
       {/* on hover highlight border */}
@@ -321,12 +329,12 @@ function InlineAnnotationView(props: any) {
         {JSON.stringify(props, null, 2)}
       </pre> */}
         <ul>
-          {(props.highlights || []).map((highlight: any, index: number) => {
+          {(props.highlights || []).map((highlight: Highlight, index: number) => {
             return (
               <li key={"highlight-" + index}>
                 {/* <span>{highlight.snippet}</span><br/> */}
                 <span>
-                  {highlight.content.map((c: any, i: number) => {
+                  {highlight.content.map((c: string, i: number) => {
                     return <span key={"content-" + i}>{c}</span>;
                   })}
                 </span>
@@ -339,7 +347,15 @@ function InlineAnnotationView(props: any) {
   );
 }
 
-function PolicyEditor(props: any) {
+interface PolicyEditorProps {
+  height?: string;
+  defaultLanguage?: string;
+  theme?: string;
+  value?: string;
+  onChange?: (value: string | undefined) => void;
+}
+
+function PolicyEditor(props: PolicyEditorProps) {
   return (
     <Editor
       height="100%"
