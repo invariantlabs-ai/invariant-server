@@ -194,7 +194,7 @@ const App = () => {
           <Examples examples={examples} onSelect={handleExampleSelect} />
         </div>
         <div className="flex items-center space-x-4">
-          <button onClick={handleShare} className="bg-background hover:bg-gray-100 px-4 py-2 rounded border text-black">
+          <button onClick={handleShare} className="bg-background hover:bg-gray-100 px-4 py-2 rounded border text-foreground">
             Share
           </button>
           <button onClick={handleEvaluate} className={`bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 ${loading ? "cursor-not-allowed opacity-50" : ""}`} disabled={loading}>
@@ -293,7 +293,7 @@ function PolicyViolation({ title, result, ranges, setScroll }) {
       style={{ width: "calc(100% - 20px)" }}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-black flex items-center select-none cursor-pointer" onClick={handleClick}>
+        <h2 className="text-xl font-semibold text-foreground flex items-center select-none cursor-pointer" onClick={handleClick}>
           {title === "Policy Violation" ? (<BsExclamationTriangle className="mr-2" />) : <BsCheckCircle className="mr-2" />}
           {title}
         </h2>
@@ -303,7 +303,7 @@ function PolicyViolation({ title, result, ranges, setScroll }) {
         </span>
         ) }
       </div>
-      <div onClick={(e) => {e.stopPropagation();}} className="mt-2 text-sm text-black bg-gray-50 p-3 rounded-lg overflow-auto cursor-text">{text}</div>
+      <div onClick={(e) => {e.stopPropagation();}} className="mt-2 text-sm text-foreground bg-gray-50 p-3 rounded-lg overflow-auto cursor-text">{text}</div>
     </div>
   );
 }
