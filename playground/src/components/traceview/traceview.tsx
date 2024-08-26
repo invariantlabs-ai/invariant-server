@@ -22,16 +22,33 @@ export const TraceView = React.forwardRef((props: TraceViewProps, ref) => {
     const { inputData, handleInputChange, annotations } = props;
     const [annotatedJSON, setAnnotatedJSON] = useState<AnnotatedJSON | null>(null);
     const traceEditorRef = useRef(null);
+    const renderedTraceContainerRef = useRef(null);
     const renderedTraceRef = useRef(null);
 
     React.useImperativeHandle(ref, () => ({
-      setScroll(position: "top" | string) {
+      setScroll(position: "top" | string, path?: string) {
         if (traceEditorRef.current) {
           traceEditorRef.current.setScroll(position);
         }
-        if (renderedTraceRef.current) {
+        if (renderedTraceContainerRef.current) {
           if (position === "top") {
-            renderedTraceRef.current.scrollTo(0, 0);
+            renderedTraceContainerRef.current.scrollTo(0, 0);
+          } else {
+            if (!path) return;
+            if (!renderedTraceRef.current) return;
+            const index = parseInt(path.split(".")[1]);
+            const childBounding = renderedTraceRef.current.getBoundingMessage(index);
+            if (!childBounding) return;
+            
+            const parent = renderedTraceContainerRef.current;
+            const parentBounding = parent.getBoundingClientRect();
+
+            const childCenter = childBounding.top + (childBounding.height / 2);
+            const parentCenter = parentBounding.top + (parentBounding.height / 2);
+
+            const scrollOffset = childCenter - parentCenter;
+            parent.scrollBy({ top: scrollOffset });
+
           }
         }
       }
@@ -61,16 +78,16 @@ export const TraceView = React.forwardRef((props: TraceViewProps, ref) => {
             <div className={"tab" + (mode === "input" ? " active" : "")}>
                 <TraceEditor ref={traceEditorRef} inputData={inputData} handleInputChange={handleInputChange} annotations={annotatedJSON || AnnotatedJSON.empty()} />
             </div>
-            <div className={"tab traces " + (mode === "trace" ? " active" : "")} ref={renderedTraceRef}>
-                <RenderedTrace trace={inputData} annotations={annotatedJSON || AnnotatedJSON.empty()} annotationView={props.annotationView} />
+            <div className={"tab traces " + (mode === "trace" ? " active" : "")} ref={renderedTraceContainerRef}>
+                <RenderedTrace ref={renderedTraceRef} trace={inputData} annotations={annotatedJSON || AnnotatedJSON.empty()} annotationView={props.annotationView} />
             </div>
         </div>}
         {sideBySide && <div className="sidebyside">
             <div className="side">
                 <TraceEditor ref={traceEditorRef} inputData={inputData} handleInputChange={handleInputChange} annotations={annotatedJSON || AnnotatedJSON.empty()} />
             </div>
-            <div className="traces side" ref={renderedTraceRef}>
-                <RenderedTrace trace={inputData} annotations={annotatedJSON || AnnotatedJSON.empty()} annotationView={props.annotationView} />
+            <div className="traces side" ref={renderedTraceContainerRef}>
+                <RenderedTrace ref={renderedTraceRef} trace={inputData} annotations={annotatedJSON || AnnotatedJSON.empty()} annotationView={props.annotationView} />
             </div>
         </div>}
     </div>
@@ -174,6 +191,8 @@ export class RenderedTrace extends React.Component<RenderedTraceProps, RenderedT
             traceString: "",
             selectedAnnotationAddress: null
         }
+
+        this.messageRefs = [];
     }
 
     componentDidUpdate(): void {
@@ -182,6 +201,13 @@ export class RenderedTrace extends React.Component<RenderedTraceProps, RenderedT
 
     componentDidMount() {
         this.parse()
+    }
+
+    getBoundingMessage(index: number) {
+      if (this.messageRefs[index] && this.messageRefs[index].current) {
+          return this.messageRefs[index].current.getBoundingClientRect();
+      }
+      return null;
     }
 
     parse() {
@@ -207,7 +233,6 @@ export class RenderedTrace extends React.Component<RenderedTraceProps, RenderedT
             </div>
         }
 
-
         try {
             const annotationContext: AnnotationContext = {
                 annotationView: this.props.annotationView,
@@ -216,9 +241,12 @@ export class RenderedTrace extends React.Component<RenderedTraceProps, RenderedT
                     this.setState({ selectedAnnotationAddress: address })
                 }
             }
-            return <div className="traces" ref={this.tracesRef}>
+            return <div className="traces">
                 {(this.state.parsed || []).map((item: any, index: number) => {
-                    return <MessageView key={index} index={index} message={item} annotations={this.props.annotations.for_path("messages." + index)} annotationContext={annotationContext} address={"messages[" + index + "]"} />
+                    if (this.messageRefs[index] === undefined) {
+                        this.messageRefs[index] = React.createRef();
+                    }
+                    return <MessageView ref={this.messageRefs[index]} key={index} index={index} message={item} annotations={this.props.annotations.for_path("messages." + index)} annotationContext={annotationContext} address={"messages[" + index + "]"} />
                 })}
             </div>
         } catch (e) {
@@ -316,8 +344,15 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
 
         this.state = {
             error: null, 
-            expanded: false
+            expanded: false,
         }
+
+        this.ref = React.createRef();
+    }
+
+    getBoundingClientRect() {
+      if (!this.ref.current) return null;
+      return this.ref.current.getBoundingClientRect();
     }
 
     componentDidCatch(error: Error) {
@@ -326,7 +361,7 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
 
     render() {
         if (this.state.error) {
-            return <div className="message">
+            return <div className="message" ref={this.ref}>
                 <h3>Failed to Render Message #{this.props.index}: {this.state.error.message}</h3>
             </div>
         }
@@ -339,7 +374,7 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
             if (!message.role) {
                 // top-level tool call
                 if (message.type == "function") {
-                    return <div className={"message tool-call" + (this.state.expanded ? " expanded" : "")}>
+                    return <div className={"message tool-call" + (this.state.expanded ? " expanded" : "")} ref={this.ref}>
                         <MessageHeader message={message} className="seamless" role="Assistant" expanded={this.state.expanded} setExpanded={(state: boolean) => this.setState({ expanded: state })} address={this.props.address} />
                         {!this.state.expanded && <>
                         <div className="tool-calls seamless">
@@ -350,7 +385,7 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
                 }
 
                 // error message
-                return <div className={"message parser-error" + (isHighlighted ? "highlight" : "")}>
+                return <div className={"message parser-error" + (isHighlighted ? "highlight" : "")} ref={this.ref}>
                     <div className="content error">
                         <p><b>Failed to render message #{this.props.index}</b>: Could not parse the following as a message or tool call. Every event requires either a "role" or "type" field.</p>
                         <pre>{JSON.stringify(message, null, 2)}</pre>
@@ -358,7 +393,7 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
                 </div>
             } else {
                 // normal message (role + content and optional tool calls)
-                return <div className={"message " + (isHighlighted ? "highlight" : "") + " " + message.role + (this.state.expanded ? " expanded" : "")}>
+                return <div className={"message " + (isHighlighted ? "highlight" : "") + " " + message.role + (this.state.expanded ? " expanded" : "")} ref={this.ref}>
                     {/* {message.role && <div className="role">
                         {message.role}
                         <div className="address">

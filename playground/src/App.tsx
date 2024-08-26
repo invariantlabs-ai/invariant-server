@@ -81,8 +81,8 @@ const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const setScroll = function (position: "top" | number) {
-    if (traceViewRef.current) traceViewRef.current.setScroll(position);
+  const setScroll = function (position: "top" | number, path?: string) {
+    if (traceViewRef.current) traceViewRef.current.setScroll(position, path);
   };
 
   const handleEvaluate = async () => {
@@ -275,14 +275,14 @@ function PolicyViolation({ title, result, ranges, setScroll }) {
   const handleClick = () => {
     const len = result.ranges.length;
     if (len === 0) return;
-    if (len === 1) { setScroll(ranges[result.ranges[0]]); return; }
+    if (len === 1) { setScroll(ranges[result.ranges[0]], result.ranges[0]); return; }
     setCounter((counter + 1) % len);
     setClicked(true);
   };
 
   useEffect(() => {
     if (!clicked) return;
-    setScroll(ranges[result.ranges[counter]]);
+    setScroll(ranges[result.ranges[counter]], result.ranges[counter]);
   }, [counter, clicked]);
 
   const text = result.error;//result.error.split("PolicyViolation(").slice(-1)[0].split(", ranges=")[0];
