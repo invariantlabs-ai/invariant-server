@@ -1,33 +1,19 @@
-import Editor from "@monaco-editor/react";
 import { Base64 } from "js-base64";
 import { useEffect, useRef,useState } from "react";
 import React from "react";
-import { BsCheckCircle, BsExclamationTriangle } from "react-icons/bs";
 
 import InvariantLogoIcon from "@/assets/logo";
 import Spinning from "@/assets/spinning";
-import Examples from "@/components/Examples";
-import { Highlight,ScrollHandle, TraceView } from "@/components/traceview/traceview";
+import Examples from "@/components/examples";
+import { PolicyEditor } from "@/components/playground/policyeditor";
+import { PolicyViolation } from "@/components/playground/policyviolation";
+import { InlineAnnotationView, ScrollHandle, TraceView } from "@/components/traceview/traceview";
 import { ResizableHandle,ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/components/ui/use-toast";
 import examples from "@/examples";
-
-function clearTerminalControlCharacters(str: string) {
-  // remove control characters like [31m
-  // eslint-disable-next-line no-control-regex
-  return str.replace(/\u001b\[\d+m/g, "");
-}
-
-interface AnalysisResult {
-  errors: Error[];
-  handled_errors: Error[];
-}
-
-interface Error {
-  error: string;
-  ranges: string[];
-}
+import type { AnalysisResult, PolicyError } from "@/lib/types";
+import { beautifyJson, clearTerminalControlCharacters, isDigit } from "@/lib/utils";
 
 const App = () => {
   const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[1].policy || "");
@@ -40,31 +26,34 @@ const App = () => {
   const [output, setOutput] = useState<string | AnalysisResult>("");
   const [ranges, setRanges] = useState<Record<string, string>>({});
 
-  const isDigit = (str: string) => {
-    return /^\d+$/.test(str);
+  const handleDigitHash = (hash: string) => {
+    handleExampleSelect(parseInt(hash, 10)); // Convert to int and call handleExampleSelect
   };
-
+  
+  const handleBase64Hash = (hash: string) => {
+    try {
+      const decodedData = JSON.parse(Base64.decode(hash));
+      if (decodedData.policy && decodedData.input) {
+        setPolicyCode(decodedData.policy);
+        setInputData(decodedData.input);
+        setOutput("");
+        setRanges({});
+        localStorage.setItem("policy", decodedData.policy);
+        localStorage.setItem("input", decodedData.input);
+      }
+    } catch (error) {
+      console.error("Failed to decode or apply hash data:", error);
+    }
+  };
+  
   const handleHashChange = () => {
     const hash = window.location.hash.substring(1); // Get hash value without the '#'
     if (isDigit(hash)) {
-      handleExampleSelect(parseInt(hash, 10)); // Convert to int and call handleExampleSelect
+      handleDigitHash(hash);
     } else if (hash) {
-      try {
-        const decodedData = JSON.parse(Base64.decode(hash));
-        if (decodedData.policy && decodedData.input) {
-          setPolicyCode(decodedData.policy);
-          setInputData(decodedData.input);
-          setOutput("");
-          setRanges({});
-          localStorage.setItem("policy", decodedData.policy);
-          localStorage.setItem("input", decodedData.input);
-        }
-      } catch (error) {
-        console.error("Failed to decode or apply hash data:", error);
-      }
+      handleBase64Hash(hash);
     }
-    window.location.hash = "";
-    history.replaceState(null, "", " ");
+    window.history.replaceState(null, "", " ");
   };
 
   useEffect(() => {
@@ -105,6 +94,10 @@ const App = () => {
         body: JSON.stringify({ trace: JSON.parse(inputData), policy: policyCode }),
       });
 
+      if (analyzeResponse.status !== 200) {
+        throw new Error(analyzeResponse.statusText);
+      }
+
       const analysisResult: string | AnalysisResult = await analyzeResponse.json();
 
       // check for error messages
@@ -116,7 +109,7 @@ const App = () => {
       }
 
       const annotations: Record<string, string> = {};
-      analysisResult.errors.forEach((e: Error) => {
+      analysisResult.errors.forEach((e: PolicyError) => {
         e.ranges.forEach((r: string) => {
           annotations[r] = e["error"];
         });
@@ -127,18 +120,9 @@ const App = () => {
     } catch (error) {
       console.error("Failed to evaluate policy:", error);
       setRanges({});
-      setOutput("An error occurred during evaluation. Please check browser console for details.");
+      setOutput("An error occurred during evaluation: " + (error as Error).message);
     } finally {
       setLoading(false); // End loading
-    }
-  };
-
-  const beautifyJson = (jsonString: string) => {
-    try {
-      const parsedJson = JSON.parse(jsonString);
-      return JSON.stringify(parsedJson, null, 2); // 2-space indentation
-    } catch {
-      return jsonString; // If it's not valid JSON, return the original string
     }
   };
 
@@ -268,114 +252,6 @@ const App = () => {
   );
 };
 
-type PolicyViolationProps = {
-  title: string;
-  result: Error;
-  ranges: Record<string, number>;
-  setScroll: (position: "top" | number, path?: string) => void;
-};
 
-function PolicyViolation({ title, result, ranges, setScroll }: PolicyViolationProps) {
-  const [counter, setCounter] = useState(result.ranges.length-1);
-  const [clicked, setClicked] = useState(false);
-
-  const handleClick = () => {
-    const len = result.ranges.length;
-    if (len === 0) return;
-    if (len === 1) { setScroll(ranges[result.ranges[0]], result.ranges[0]); return; }
-    setCounter((counter + 1) % len);
-    setClicked(true);
-  };
-
-  useEffect(() => {
-    if (!clicked) return;
-    setScroll(ranges[result.ranges[counter]], result.ranges[counter]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counter, clicked]);
-
-  const text = result.error;//result.error.split("PolicyViolation(").slice(-1)[0].split(", ranges=")[0];
-
-  return (
-    <div
-      className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow m-[10px] mb-[20px]"
-      style={{ width: "calc(100% - 20px)" }}
-    >
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-foreground flex items-center select-none cursor-pointer" onClick={handleClick}>
-          {title === "Policy Violation" ? (<BsExclamationTriangle className="mr-2" />) : <BsCheckCircle className="mr-2" />}
-          {title}
-        </h2>
-        { result.ranges.length > 0 && (
-        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-indigo-500 rounded-full select-none cursor-pointer" onClick={handleClick}>
-          {counter % result.ranges.length + 1}/{result.ranges.length}
-        </span>
-        ) }
-      </div>
-      <div onClick={(e) => {e.stopPropagation();}} className="mt-2 text-sm text-foreground bg-gray-50 p-3 rounded-lg overflow-auto cursor-text">{text}</div>
-    </div>
-  );
-}
-
-function InlineAnnotationView(props: {address: string, highlights: Highlight[]}) {
-  if ((props.highlights || []).length === 0) {
-    return null;
-  }
-  console.log(props.highlights)
-  return (
-    <>
-      {/* on hover highlight border */}
-      <div className="bg-white p-4 rounded flex flex-col max-h-[100%] border">
-        {/* <span>These are the annotation for:</span> */}
-        {/* <pre>
-        {JSON.stringify(props, null, 2)}
-      </pre> */}
-        <ul>
-          {(props.highlights || []).map((highlight: Highlight, index: number) => {
-            return (
-              <li key={"highlight-" + index}>
-                {/* <span>{highlight.snippet}</span><br/> */}
-                <span>
-                  {highlight.content.map((c: string, i: number) => {
-                    return <span key={"content-" + i}>{c}</span>;
-                  })}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </>
-  );
-}
-
-interface PolicyEditorProps {
-  height?: string;
-  defaultLanguage?: string;
-  theme?: string;
-  value?: string;
-  onChange?: (value: string | undefined) => void;
-}
-
-function PolicyEditor(props: PolicyEditorProps) {
-  return (
-    <Editor
-      height="100%"
-      defaultLanguage="python"
-      theme="vs-light"
-      options={{
-        wordWrap: "on",
-        minimap: { enabled: false },
-        scrollBeyondLastLine: false,
-        overviewRulerLanes: 0,
-        hideCursorInOverviewRuler: true,
-        scrollbar: {
-          vertical: "auto",
-        },
-        overviewRulerBorder: false,
-      }}
-      {...props}
-    />
-  );
-}
 
 export default App;

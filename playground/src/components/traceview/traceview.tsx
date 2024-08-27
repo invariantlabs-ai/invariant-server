@@ -776,3 +776,34 @@ function Line(props: { children: any; annotationContext?: AnnotationContext; add
     </span>
   );
 }
+
+export function InlineAnnotationView(props: {address: string, highlights: Highlight[]}) {
+  if ((props.highlights || []).length === 0) {
+    return null;
+  }
+  return (
+    <>
+      {/* on hover highlight border */}
+      <div className="bg-white p-4 rounded flex flex-col max-h-[100%] border">
+        {/* <span>These are the annotation for:</span> */}
+        {/* <pre>
+        {JSON.stringify(props, null, 2)}
+      </pre> */}
+        <ul>
+          {(props.highlights || []).map((highlight: Highlight, index: number) => {
+            return (
+              <li key={"highlight-" + index}>
+                {/* <span>{highlight.snippet}</span><br/> */}
+                <span>
+                  {highlight.content.map((c: string, i: number) => {
+                    return <span key={"content-" + i}>{c}</span>;
+                  })}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </>
+  );
+}
