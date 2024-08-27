@@ -1,6 +1,7 @@
 import "./TraceView.scss";
 
-import Editor from "@monaco-editor/react";
+import Editor, { Monaco } from "@monaco-editor/react";
+import { editor as MonacoEditor } from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
 import React from "react";
 import { BsCaretDownFill, BsCaretRightFill, BsChatFill,BsPersonFill, BsRobot } from "react-icons/bs";
@@ -15,8 +16,8 @@ export interface Highlight {
 }
 
 interface AnnotationViewProps {
-  highlights: Highlight[];
-  address: string;
+  highlights?: Highlight[] | GroupedAnnotation[];
+  address?: string;
 }
 
 interface TraceViewProps {
@@ -28,7 +29,7 @@ interface TraceViewProps {
   // whether to use the side-by-side view
   sideBySide?: boolean;
   // custom view to show when selecting a line
-  annotationView?: React.ComponentType<AnnotationViewProps>;
+  annotationView?: React.FunctionComponent<AnnotationViewProps>;
 }
 
 export interface ScrollHandle {
@@ -39,8 +40,8 @@ export const TraceView = React.forwardRef<ScrollHandle, TraceViewProps>((props: 
   const { inputData, handleInputChange, annotations } = props;
   const [annotatedJSON, setAnnotatedJSON] = useState<AnnotatedJSON | null>(null);
   const traceEditorRef = useRef<ScrollHandle | null>(null);
-  const renderedTraceContainerRef = useRef<HTMLElement>(null);
-  const renderedTraceRef = useRef<HTMLElement>(null);
+  const renderedTraceContainerRef = useRef<HTMLDivElement>(null);
+  const renderedTraceRef = useRef<RenderedTrace>(null);
 
   React.useImperativeHandle(ref, () => ({
     setScroll(position: "top" | number, path?: string) {
@@ -116,16 +117,15 @@ export const TraceView = React.forwardRef<ScrollHandle, TraceViewProps>((props: 
     </div>
   );
 });
-
 interface TraceEditorProps {
   inputData: string;
-  handleInputChange: () => void;
+  handleInputChange: (value: string | undefined) => void;
   annotations: AnnotatedJSON;
 }
 export const TraceEditor = React.forwardRef<ScrollHandle, TraceEditorProps>((props, ref) => {
-  const [editor, setEditor] = useState(null as any);
-  const [monaco, setMonaco] = useState(null as any);
-  const [editorDecorations, setEditorDecorations] = useState([] as any);
+  const [editor, setEditor] = useState<MonacoEditor.IStandaloneCodeEditor | null>(null);
+  const [monaco, setMonaco] = useState<Monaco | null>(null);
+  const [editorDecorations, setEditorDecorations] = useState<MonacoEditor.IEditorDecorationsCollection>();
 
   React.useImperativeHandle(ref, () => ({
     setScroll(position: "top" | number) {
@@ -135,10 +135,10 @@ export const TraceEditor = React.forwardRef<ScrollHandle, TraceEditorProps>((pro
         } else {
           const annotation = props.annotations.for_path("messages").in_text(props.inputData)[position];
           if (!annotation) return;
-          const pos = editor.getModel().getPositionAt(annotation.start);
+          const pos = editor.getModel()?.getPositionAt(annotation.start);
           if (!pos) return;
           editor.revealLineInCenter(pos.lineNumber);
-          editor.setPosition({ column: pos.columnNumber || 1, lineNumber: pos.lineNumber });
+          editor.setPosition({ column: pos.column || 1, lineNumber: pos.lineNumber });
         }
       }
     },
@@ -156,7 +156,7 @@ export const TraceEditor = React.forwardRef<ScrollHandle, TraceEditorProps>((pro
     editorDecorations.set(
       annotations_in_text.map((a: Annotation) => {
         // get range from absolute start and end offsets
-        const range = monaco.Range.fromPositions(editor.getModel().getPositionAt(a.start), editor.getModel().getPositionAt(a.end));
+        const range = monaco.Range.fromPositions(editor.getModel()!.getPositionAt(a.start), editor.getModel()!.getPositionAt(a.end));
         const r = {
           range: range,
           options: {
@@ -172,7 +172,7 @@ export const TraceEditor = React.forwardRef<ScrollHandle, TraceEditorProps>((pro
     // editor.deltaDecorations([], decorations)
   }, [editor, props.annotations, monaco, props.inputData, editorDecorations]);
 
-  const onMount = (editor: any, monaco: any) => {
+  const onMount = (editor: MonacoEditor.IStandaloneCodeEditor, monaco: Monaco) => {
     setEditor(editor);
     setMonaco(monaco);
     const collection = editor.createDecorationsCollection();
@@ -202,7 +202,7 @@ export const TraceEditor = React.forwardRef<ScrollHandle, TraceEditorProps>((pro
 interface RenderedTraceProps {
   trace: string;
   annotations: AnnotatedJSON;
-  annotationView?: React.ComponentType;
+  annotationView?: React.FunctionComponent<AnnotationViewProps>;
 }
 
 interface RenderedTraceState {
@@ -215,11 +215,12 @@ interface RenderedTraceState {
 interface AnnotationContext {
   selectedAnnotationAnchor: string | null;
   setSelection: (address: string | null) => void;
-  annotationView?: React.ComponentType;
+  annotationView?: React.FunctionComponent<AnnotationViewProps>;
 }
 
 // handles exceptions in the rendering pass, gracefully
 export class RenderedTrace extends React.Component<RenderedTraceProps, RenderedTraceState> {
+  messageRefs: React.RefObject<MessageView>[];
   constructor(props: RenderedTraceProps) {
     super(props);
 
@@ -385,6 +386,7 @@ function CompactView(props: { message: any }) {
 }
 
 class MessageView extends React.Component<MessageViewProps, { error: Error | null; expanded: boolean }> {
+  ref: React.RefObject<HTMLDivElement>;
   constructor(props: MessageViewProps) {
     super(props);
 
@@ -488,7 +490,7 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
                 )}
                 {message.tool_calls && (
                   <div className={"tool-calls " + (message.content ? "" : " seamless")}>
-                    {message.tool_calls.map((tool_call: any, index: number) => {
+                    {message.tool_calls.map((tool_call: ToolCall, index: number) => {
                       return (
                         <ToolCallView
                           key={index}
@@ -513,7 +515,7 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
   }
 }
 
-function ToolCallView(props: { tool_call: any; annotations: any; annotationContext?: AnnotationContext; address: string }) {
+function ToolCallView(props: { tool_call: ToolCall; annotations: any; annotationContext?: AnnotationContext; address: string }) {
   const tool_call = props.tool_call;
   const annotations = props.annotations;
 
@@ -557,14 +559,31 @@ function ToolCallView(props: { tool_call: any; annotations: any; annotationConte
   );
 }
 
-function AnnotatedJSONTable(props: { tool_call: any; annotations: any; children: any; annotationContext?: AnnotationContext; address: string }) {
+interface FunctionToolCall {
+  type: "function";
+  function: {
+    name: string;
+    arguments?: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      [key: string]: any;
+    } | string;
+  };
+}
+
+interface OtherToolCall {
+  type: string;
+}
+
+type ToolCall = OtherToolCall & FunctionToolCall;
+
+function AnnotatedJSONTable(props: { tool_call: ToolCall; annotations: any; children: any; annotationContext?: AnnotationContext; address: string }) {
   // fall back
   // return <AnnotatedStringifiedJSON annotations={props.annotations} address={props.address}>{props.children}</AnnotatedStringifiedJSON>
 
   const tool_call = props.tool_call;
   const annotations = props.annotations;
 
-  if (tool_call.type != "function") {
+  if (tool_call.type !== "function") {
     return <pre>{JSON.stringify(tool_call, null, 2)}</pre>;
   }
 
@@ -675,6 +694,7 @@ function Annotated(props: { annotations: any; children: any; annotationContext?:
       );
     }
     setContentElements(elements);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.annotations, props.children, props.annotationContext?.selectedAnnotationAnchor]);
 
   return (
@@ -730,6 +750,7 @@ function AnnotatedStringifiedJSON(props: { annotations: any; children: any; anno
       );
     }
     setContentElements(elements);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.annotations, props.children, props.annotationContext?.selectedAnnotationAnchor]);
 
   return (
@@ -762,7 +783,7 @@ function Line(props: { children: any; annotationContext?: AnnotationContext; add
     return <span className={className}>{props.children}</span>;
   }
 
-  const InlineComponent: any = annotationView;
+  const InlineComponent = annotationView;
   const content = InlineComponent({ highlights: props.highlights, address: props.address });
 
   if (content === null) {
@@ -777,7 +798,7 @@ function Line(props: { children: any; annotationContext?: AnnotationContext; add
   );
 }
 
-export function InlineAnnotationView(props: {address: string, highlights: Highlight[]}) {
+export function InlineAnnotationView(props: {address?: string, highlights?: Highlight[] | GroupedAnnotation[]}) {
   if ((props.highlights || []).length === 0) {
     return null;
   }
@@ -790,12 +811,12 @@ export function InlineAnnotationView(props: {address: string, highlights: Highli
         {JSON.stringify(props, null, 2)}
       </pre> */}
         <ul>
-          {(props.highlights || []).map((highlight: Highlight, index: number) => {
+          {(props.highlights as Highlight[] || []).map((highlight: Highlight, index: number) => {
             return (
               <li key={"highlight-" + index}>
                 {/* <span>{highlight.snippet}</span><br/> */}
                 <span>
-                  {highlight.content.map((c: string, i: number) => {
+                  {highlight.content?.map((c: string, i: number) => {
                     return <span key={"content-" + i}>{c}</span>;
                   })}
                 </span>

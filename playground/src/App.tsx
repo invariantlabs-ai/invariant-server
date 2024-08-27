@@ -144,9 +144,9 @@ const App = () => {
     if (!selectedExample.policy || !selectedExample.input) return;
 
     setPolicyCode(selectedExample.policy);
+    setInputData(selectedExample.input);
     setOutput("");
     setRanges({});
-    setInputData(selectedExample.input);
     localStorage.setItem("policy", selectedExample.policy);
     localStorage.setItem("input", selectedExample.input);
   };
