@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import React from "react";
 import { BsCaretDownFill, BsCaretRightFill, BsChatFill,BsPersonFill, BsRobot } from "react-icons/bs";
 
-import { AnnotatedJSON, Annotation, GroupedAnnotation } from "./annotations";
+import { AnnotatedJSON, Annotation, GroupedAnnotation } from "@/components/traceview/annotations";
 
 export interface Highlight {
   content: string[];
