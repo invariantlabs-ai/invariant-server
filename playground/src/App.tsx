@@ -1,6 +1,7 @@
 import { Base64 } from "js-base64";
-import { useEffect, useRef,useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import React from "react";
+import { useWindowSize } from "usehooks-ts";
 
 import InvariantLogoIcon from "@/assets/logo";
 import Spinning from "@/assets/spinning";
@@ -8,7 +9,7 @@ import Examples from "@/components/examples";
 import { PolicyEditor } from "@/components/playground/policyeditor";
 import { PolicyViolation } from "@/components/playground/policyviolation";
 import { InlineAnnotationView, ScrollHandle, TraceView } from "@/components/traceview/traceview";
-import { ResizableHandle,ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/components/ui/use-toast";
 import examples from "@/examples";
@@ -20,6 +21,7 @@ const App = () => {
   const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || examples[1].input || "");
   const traceViewRef = useRef<ScrollHandle>(null);
   const { toast } = useToast();
+  const { width: screenWidth } = useWindowSize({debounceDelay: 100});
 
   // output and ranges
   const [loading, setLoading] = useState<boolean>(false);
@@ -29,7 +31,7 @@ const App = () => {
   const handleDigitHash = (hash: string) => {
     handleExampleSelect(parseInt(hash, 10)); // Convert to int and call handleExampleSelect
   };
-  
+
   const handleBase64Hash = (hash: string) => {
     try {
       const decodedData = JSON.parse(Base64.decode(hash));
@@ -45,7 +47,7 @@ const App = () => {
       console.error("Failed to decode or apply hash data:", error);
     }
   };
-  
+
   const handleHashChange = () => {
     const hash = window.location.hash.substring(1); // Get hash value without the '#'
     if (isDigit(hash)) {
@@ -188,7 +190,7 @@ const App = () => {
       </nav>
 
       <div className="flex-1">
-        <ResizablePanelGroup direction="horizontal">
+        <ResizablePanelGroup direction={screenWidth > 768 ? "horizontal" : "vertical"}>
           <ResizablePanel className="flex-1 flex flex-col">
             <div className="flex-1 flex flex-col">
               <h2 className="font-bold mb-2 m-2">POLICY</h2>
@@ -216,27 +218,29 @@ const App = () => {
                       </div>
                     ) : (
                       <div className="flex-1 overflow-y-auto whitespace-pre-wrap break-words">
-                        {typeof output === "string"
-                          ? output
-                          : output.errors.length > 0 ? output.errors.reduce(
-                              (acc: {currentIndex: number, ranges: Record<string, number>, components: React.ReactElement[]}, result, key) => {
-                                for (const range of result.ranges) {
-                                  if (acc.ranges[range] === undefined) {
-                                    acc.ranges[range] = acc.currentIndex;
-                                    acc.currentIndex++;
-                                  }
+                        {typeof output === "string" ? (
+                          output
+                        ) : output.errors.length > 0 ? (
+                          output.errors.reduce(
+                            (acc: { currentIndex: number; ranges: Record<string, number>; components: React.ReactElement[] }, result, key) => {
+                              for (const range of result.ranges) {
+                                if (acc.ranges[range] === undefined) {
+                                  acc.ranges[range] = acc.currentIndex;
+                                  acc.currentIndex++;
                                 }
-                                acc.components.push(
-                                  <React.Fragment key={key}>
-                                    <PolicyViolation title={"Policy Violation"} result={result} ranges={acc.ranges} setScroll={setScroll} />
-                                  </React.Fragment>
-                                );
-                                return acc;
-                              },
-                              { currentIndex: 0, components: [], ranges: {} }
-                            ).components
-                            : <PolicyViolation title={"OK"} result={{error:"No policy violations were detected", ranges:[]}} ranges={{}} setScroll={() => {}} />
-                          }
+                              }
+                              acc.components.push(
+                                <React.Fragment key={key}>
+                                  <PolicyViolation title={"Policy Violation"} result={result} ranges={acc.ranges} setScroll={setScroll} />
+                                </React.Fragment>
+                              );
+                              return acc;
+                            },
+                            { currentIndex: 0, components: [], ranges: {} }
+                          ).components
+                        ) : (
+                          <PolicyViolation title={"OK"} result={{ error: "No policy violations were detected", ranges: [] }} ranges={{}} setScroll={() => {}} />
+                        )}
                       </div>
                     )}
                   </div>
@@ -251,7 +255,5 @@ const App = () => {
     </div>
   );
 };
-
-
 
 export default App;
