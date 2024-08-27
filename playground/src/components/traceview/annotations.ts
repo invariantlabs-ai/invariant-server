@@ -77,7 +77,7 @@ export class AnnotatedJSON {
             return EMPTY_ANNOTATIONS
         }
         
-        let sub = new AnnotatedJSON(tree)
+        const sub = new AnnotatedJSON(tree)
         this.cachedSubs[path] = sub
         return sub
     }
@@ -87,14 +87,14 @@ export class AnnotatedJSON {
     }
 
     allAnnotations(): Annotation[] {
-        let queue = [this.annotationsMap]
-        let annotations = []
+        const queue = [this.annotationsMap]
+        const annotations = []
         while (queue.length > 0) {
-            let current: any = queue.shift()
+            const current: any = queue.shift()
             if (current.$annotations) {
                 annotations.push(...current.$annotations)
             }
-            for (let key in current) {
+            for (const key in current) {
                 if (key !== "$annotations") {
                     queue.push(current[key])
                 }
@@ -123,7 +123,7 @@ export class AnnotatedJSON {
             return EMPTY_ANNOTATIONS
         }
 
-        let annotationsMap = annotationsToMap(mappings)
+        const annotationsMap = annotationsToMap(mappings)
         return new AnnotatedJSON(annotationsMap)
     }
 
@@ -143,7 +143,7 @@ export class AnnotatedJSON {
             for (const key in map.pointers) {
                 const pointer = map.pointers[key]
                 // in case, we map to a string, we offset the start and end by 1 to exclude the quotes
-                let isDoubleQuote = object_string[pointer.value.pos] === '"'
+                const isDoubleQuote = object_string[pointer.value.pos] === '"'
                 pointers.push({ 
                     start: pointer.value.pos + (isDoubleQuote ? 1 : 0),
                     end: pointer.valueEnd.pos + (isDoubleQuote ? -1 : 0),
@@ -152,7 +152,7 @@ export class AnnotatedJSON {
             }
 
             // construct source range map (maps object properties to ranges in the object string)
-            let srm = sourceRangesToMap(pointers)
+            const srm = sourceRangesToMap(pointers)
 
             // return annotations with text offsets
             return to_text_offsets(this.annotationsMap, srm)
@@ -172,8 +172,8 @@ export class AnnotatedJSON {
     }
 
     static by_lines(disjunct_annotations: Annotation[], text: string): GroupedAnnotation[][] {
-        let result: GroupedAnnotation[][] = [[]]
-        let queue: GroupedAnnotation[] = disjunct_annotations.map((a) => ({ start: a.start, end: a.end, content: a.content }))
+        const result: GroupedAnnotation[][] = [[]]
+        const queue: GroupedAnnotation[] = disjunct_annotations.map((a) => ({ start: a.start, end: a.end, content: a.content }))
 
         while (queue.length > 0) {
             const front = queue[0]
@@ -296,13 +296,13 @@ function sourceRangesToMap(ranges: { start: number, end: number, content: string
             if (!current["$annotations"]) {
                 current["$annotations"] = []
             }
-            let new_range = { start: range.start, end: range.end, content: range.content }
+            const new_range = { start: range.start, end: range.end, content: range.content }
             current["$annotations"].push(new_range)
             continue
         }
 
         for (let i = 0; i < parts.length; i++) {
-            let part: any = parts[i]
+            const part: any = parts[i]
 
             if (i === parts.length - 1) {
                 if (!current[part]) {
@@ -312,7 +312,7 @@ function sourceRangesToMap(ranges: { start: number, end: number, content: string
                     current[part]["$annotations"] = []
                 }
                 
-                let new_range = { start: range.start, end: range.end, content: range.content }
+                const new_range = { start: range.start, end: range.end, content: range.content }
                 current[part]["$annotations"].push(new_range)
             } else {
                 if (!current[part]) {
@@ -334,13 +334,13 @@ function sourceRangesToMap(ranges: { start: number, end: number, content: string
  * Returns the flattened list of annotations, with start and end offsets adjusted to the actual text offsets.
  */
 function to_text_offsets(annotationMap: any, sourceRangeMap: any, located_annotations: any[] = []): Annotation[] {
-    for (let key of Object.keys(annotationMap)) {
+    for (const key of Object.keys(annotationMap)) {
         if (key === "$annotations") {
             annotationMap[key].forEach((a: any) => {
                 // a["start"] += sourceRangeMap[key][0]["start"]
                 // a["end"] += sourceRangeMap[key][0]["start"]
-                let end = a["end"] !== null ? a["end"] + sourceRangeMap[key][0]["start"] : sourceRangeMap[key][0]["end"]
-                let start = a["start"] !== null ? a["start"] + sourceRangeMap[key][0]["start"] : sourceRangeMap[key][0]["start"]
+                const end = a["end"] !== null ? a["end"] + sourceRangeMap[key][0]["start"] : sourceRangeMap[key][0]["end"]
+                const start = a["start"] !== null ? a["start"] + sourceRangeMap[key][0]["start"] : sourceRangeMap[key][0]["start"]
 
                 located_annotations.push({
                     "start": start,
@@ -378,9 +378,9 @@ function annotationsToMap(annotations: Record<string, any>, prefix = ""): Annota
         
         if (firstSegment.includes(':')) {
             const [last_prop, range] = firstSegment.split(':')
-            let [start, end] = range.split('-')
-            let parsedStart = parseInt(start)
-            let parsedEnd = parseFloat(end)
+            const [start, end] = range.split('-')
+            const parsedStart = parseInt(start)
+            const parsedEnd = parseFloat(end)
             if (isNaN(parsedStart) || isNaN(parsedEnd)) {
                 throw new Error(`Failed to parse range ${range} in key ${prefix + key}`)
             }

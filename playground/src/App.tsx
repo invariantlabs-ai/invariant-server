@@ -1,16 +1,17 @@
-import { useState, useEffect, useRef } from "react";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { Toaster } from "@/components/ui/toaster";
-import { useToast } from "@/components/ui/use-toast";
 import Editor from "@monaco-editor/react";
-import InvariantLogoIcon from "@/assets/logo";
-import Examples from "@/components/Examples";
-import examples from "@/examples";
-import { TraceView, ScrollHandle, Highlight } from "@/components/traceview/traceview";
-import Spinning from "@/assets/spinning";
 import { Base64 } from "js-base64";
+import { useEffect, useRef,useState } from "react";
 import React from "react";
 import { BsCheckCircle, BsExclamationTriangle } from "react-icons/bs";
+
+import InvariantLogoIcon from "@/assets/logo";
+import Spinning from "@/assets/spinning";
+import Examples from "@/components/Examples";
+import { Highlight,ScrollHandle, TraceView } from "@/components/traceview/traceview";
+import { ResizableHandle,ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/components/ui/use-toast";
+import examples from "@/examples";
 
 function clearTerminalControlCharacters(str: string) {
   // remove control characters like [31m
@@ -186,13 +187,13 @@ const App = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      <nav className="bg-background text-foreground p-4 border-b-2 flex items-center justify-between">
+      <nav className="bg-background text-foreground p-4 border-b-2 flex flex-col sm:flex-row items-center justify-between">
         <div className="flex items-center space-x-2">
           <InvariantLogoIcon />
           <h1 className="text-lg">Invariant Playground</h1>
           <Examples examples={examples} onSelect={handleExampleSelect} />
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 mt-4 sm:mt-0">
           <button onClick={handleShare} className="bg-background hover:bg-gray-100 px-4 py-2 rounded border text-foreground">
             Share
           </button>

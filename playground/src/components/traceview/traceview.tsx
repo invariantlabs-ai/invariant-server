@@ -1,8 +1,9 @@
 import "./TraceView.scss";
+
 import Editor from "@monaco-editor/react";
 import { useEffect, useRef, useState } from "react";
 import React from "react";
-import { BsCaretRightFill, BsCaretDownFill, BsPersonFill, BsRobot, BsChatFill } from "react-icons/bs";
+import { BsCaretDownFill, BsCaretRightFill, BsChatFill,BsPersonFill, BsRobot } from "react-icons/bs";
 
 import { AnnotatedJSON, Annotation, GroupedAnnotation } from "./annotations";
 
@@ -37,7 +38,7 @@ export interface ScrollHandle {
 export const TraceView = React.forwardRef<ScrollHandle, TraceViewProps>((props: TraceViewProps, ref) => {
   const { inputData, handleInputChange, annotations } = props;
   const [annotatedJSON, setAnnotatedJSON] = useState<AnnotatedJSON | null>(null);
-  const traceEditorRef = useRef(null);
+  const traceEditorRef = useRef<ScrollHandle | null>(null);
   const renderedTraceContainerRef = useRef<HTMLElement>(null);
   const renderedTraceRef = useRef<HTMLElement>(null);
 
@@ -132,9 +133,9 @@ export const TraceEditor = React.forwardRef<ScrollHandle, TraceEditorProps>((pro
         if (position === "top") {
           editor.setScrollPosition({ scrollTop: 0 });
         } else {
-          let annotation = props.annotations.for_path("messages").in_text(props.inputData)[position];
+          const annotation = props.annotations.for_path("messages").in_text(props.inputData)[position];
           if (!annotation) return;
-          let pos = editor.getModel().getPositionAt(annotation.start);
+          const pos = editor.getModel().getPositionAt(annotation.start);
           if (!pos) return;
           editor.revealLineInCenter(pos.lineNumber);
           editor.setPosition({ column: pos.columnNumber || 1, lineNumber: pos.lineNumber });
@@ -149,14 +150,14 @@ export const TraceEditor = React.forwardRef<ScrollHandle, TraceEditorProps>((pro
       return;
     }
 
-    let annotations_in_text = props.annotations.for_path("messages").in_text(props.inputData);
+    const annotations_in_text = props.annotations.for_path("messages").in_text(props.inputData);
 
     editorDecorations.clear();
     editorDecorations.set(
       annotations_in_text.map((a: Annotation) => {
         // get range from absolute start and end offsets
-        let range = monaco.Range.fromPositions(editor.getModel().getPositionAt(a.start), editor.getModel().getPositionAt(a.end));
-        let r = {
+        const range = monaco.Range.fromPositions(editor.getModel().getPositionAt(a.start), editor.getModel().getPositionAt(a.end));
+        const r = {
           range: range,
           options: {
             isWholeLine: false,
@@ -174,7 +175,7 @@ export const TraceEditor = React.forwardRef<ScrollHandle, TraceEditorProps>((pro
   const onMount = (editor: any, monaco: any) => {
     setEditor(editor);
     setMonaco(monaco);
-    let collection = editor.createDecorationsCollection();
+    const collection = editor.createDecorationsCollection();
     setEditorDecorations(collection);
   };
 
@@ -568,7 +569,7 @@ function AnnotatedJSONTable(props: { tool_call: any; annotations: any; children:
   }
 
   const f = tool_call.function;
-  let args = f.arguments;
+  const args = f.arguments;
   let keys = [];
 
   // format args as error message if undefined
@@ -605,12 +606,12 @@ function AnnotatedJSONTable(props: { tool_call: any; annotations: any; children:
 }
 
 function replaceNLs(content: string, key: string) {
-  let elements = [];
+  const elements = [];
 
   if (!content.includes("\n")) {
     return content;
   } else {
-    let lines = content.split("\n");
+    const lines = content.split("\n");
     for (let i = 0; i < lines.length; i++) {
       elements.push(lines[i]);
       elements.push(
@@ -636,10 +637,10 @@ function Annotated(props: { annotations: any; children: any; annotationContext?:
 
     let annotations_in_text = props.annotations.in_text(JSON.stringify(content, null, 2));
     annotations_in_text = AnnotatedJSON.disjunct(annotations_in_text);
-    let annotations_per_line = AnnotatedJSON.by_lines(annotations_in_text, '"' + content + '"');
+    const annotations_per_line = AnnotatedJSON.by_lines(annotations_in_text, '"' + content + '"');
 
     for (const annotations of annotations_per_line) {
-      let line = [];
+      const line = [];
       for (const interval of annotations) {
         // additionally highlight NLs with unicode character
         let c = content.substring(interval.start - 1, interval.end - 1);
@@ -693,10 +694,10 @@ function AnnotatedStringifiedJSON(props: { annotations: any; children: any; anno
 
     let annotations_in_text = props.annotations.in_text(content);
     annotations_in_text = AnnotatedJSON.disjunct(annotations_in_text);
-    let annotations_per_line = AnnotatedJSON.by_lines(annotations_in_text, content);
+    const annotations_per_line = AnnotatedJSON.by_lines(annotations_in_text, content);
 
     for (const annotations of annotations_per_line) {
-      let line = [];
+      const line = [];
       for (const interval of annotations) {
         // for (const interval of annotations_in_text) {
         if (interval.content === null) {

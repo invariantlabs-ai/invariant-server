@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Command, CommandInput, CommandList, CommandItem } from "@/components/ui/command";
 import { ChevronDown } from "lucide-react";
+import React, { useState } from "react";
+
+import { Command, CommandInput, CommandItem,CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent,PopoverTrigger } from "@/components/ui/popover";
 import { Example } from "@/examples";
 
 interface ExamplesProps {
