@@ -1,6 +1,7 @@
 import { Base64 } from "js-base64";
 import { useEffect, useRef, useState } from "react";
 import React from "react";
+import { BsPlay, BsPlayCircle, BsPlayFill, BsShare } from "react-icons/bs";
 import { useWindowSize } from "usehooks-ts";
 
 import InvariantLogoIcon from "@/assets/logo";
@@ -9,14 +10,13 @@ import Examples from "@/components/examples";
 import { PolicyEditor } from "@/components/playground/policyeditor";
 import { PolicyViolation } from "@/components/playground/policyviolation";
 import { InlineAnnotationView, ScrollHandle, TraceView } from "@/components/traceview/traceview";
+import { Button } from "@/components/ui/button";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/components/ui/use-toast";
 import examples from "@/examples";
 import type { AnalysisResult, PolicyError } from "@/lib/types";
 import { beautifyJson, clearTerminalControlCharacters, isDigit } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { BsPlay, BsPlayCircle, BsPlayFill, BsShare } from "react-icons/bs";
 
 const App = () => {
   const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[1].policy || "");
@@ -199,24 +199,24 @@ const App = () => {
 
       <div className="flex-1">
         <ResizablePanelGroup direction={screenWidth > 768 ? "horizontal" : "vertical"}>
-          <ResizablePanel className="flex-1 flex flex-col">
+          <ResizablePanel className="flex-1 flex flex-col m-2">
             <div className="flex-1 flex flex-col">
               <h2 className="font-bold mb-2 m-2">POLICY</h2>
               <PolicyEditor height="100%" defaultLanguage="python" value={policyCode} onChange={(value?: string) => setPolicyCode(value || "")} theme="vs-light" />
             </div>
           </ResizablePanel>
 
-          <ResizableHandle className="w-2 bg-gray-300 hover:bg-gray-500" />
+          <ResizableHandle className=" bg-gray-300 hover:bg-gray-500" />
 
           <ResizablePanel className="flex-1">
             <ResizablePanelGroup direction="vertical">
-              <ResizablePanel className="flex-1 flex flex-col" defaultSize={65}>
+              <ResizablePanel className="flex-1 flex flex-col m-2" defaultSize={65}>
                 <TraceView ref={traceViewRef} inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={InlineAnnotationView} />
               </ResizablePanel>
 
               <ResizableHandle className="h-2 bg-gray-300 hover:bg-gray-500" />
 
-              <ResizablePanel className="flex-1 flex flex-col" defaultSize={35}>
+              <ResizablePanel className="flex-1 flex flex-col m-2" defaultSize={35}>
                 <div className="bg-white p-4 shadow rounded flex-1 flex flex-col max-h-[100%]">
                   <h2 className="font-bold mb-2">OUTPUT</h2>
                   <div className="w-full max-h-full flex-1 p-2 border rounded bg-gray-50 overflow-auto">
