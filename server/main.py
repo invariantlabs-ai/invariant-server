@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from server.routers import policy, monitor
 from server.ipc.controller import get_ipc_controller
 from fastapi.staticfiles import StaticFiles
@@ -8,6 +8,7 @@ from prometheus_fastapi_instrumentator.metrics import Info
 from prometheus_client import Gauge
 from contextlib import asynccontextmanager
 from server import logging
+import os
 import psutil
 import hashlib
 
@@ -58,6 +59,13 @@ def system_usage():
     return instrumentation
 
 
+def auth_metrics(request: Request):
+    request_token = request.headers.get("authorization", "")
+    token = os.getenv("PROMETHEUS_TOKEN", "")
+    if not token or request_token != f"Bearer {token}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
 Instrumentator(excluded_handlers=["/metrics"]).add(
     metrics.default(
         metric_namespace="invariant",
@@ -79,7 +87,7 @@ Instrumentator(excluded_handlers=["/metrics"]).add(
         should_include_method=False,
         should_include_status=True,
     )
-).add(system_usage()).instrument(app).expose(app)
+).add(system_usage()).instrument(app).expose(app, dependencies=[Depends(auth_metrics)])
 
 app.add_middleware(HashRequestBodyMiddleware)
 
