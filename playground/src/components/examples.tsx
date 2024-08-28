@@ -1,6 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import React, { useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { Command, CommandInput, CommandItem,CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent,PopoverTrigger } from "@/components/ui/popover";
 import { Example } from "@/examples";
@@ -23,10 +24,10 @@ const Examples: React.FC<ExamplesProps> = ({ examples, onSelect }) => {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button className="flex items-center bg-white text-black px-4 py-2 border rounded hover:bg-gray-100">
+        <Button className="flex items-center bg-white text-black hover:bg-white border-[1px] border-white border-solid hover:border-gray-300">
           {title}
           <ChevronDown className="ml-2 h-4 w-4" />
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent className="p-2">
         <Command>

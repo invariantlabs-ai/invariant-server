@@ -183,7 +183,7 @@ const App = () => {
           </div>
           <Examples examples={examples} onSelect={handleExampleSelect} />
         </div>
-        <div className="flex items-center space-x-4 mt-4 sm:mt-0">
+        <div className="flex items-center space-x-4 mb-2 sm:mb-0">
           {/*<button onClick={handleShare} className="bg-background hover:bg-gray-100 px-4 py-2 rounded border text-foreground">
             Share
           </button>*/}
@@ -208,20 +208,20 @@ const App = () => {
             </div>
           </ResizablePanel>
 
-          <ResizableHandle className=" bg-gray-300 hover:bg-gray-500" />
+          <ResizableHandle className="bg-transparent" />
 
-          <ResizablePanel className="flex-1">
+          <ResizablePanel className="flex-1 flex flex-col m-2">
             <ResizablePanelGroup direction="vertical">
-              <ResizablePanel className="flex-1 flex flex-col m-2" defaultSize={65}>
+              <ResizablePanel className="flex-1 flex flex-col mb-2" defaultSize={65}>
                 <TraceView ref={traceViewRef} inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={InlineAnnotationView} />
               </ResizablePanel>
 
-              <ResizableHandle className="h-2 bg-gray-300 hover:bg-gray-500" />
+              <ResizableHandle className="bg-transparent" />
 
-              <ResizablePanel className="flex-1 flex flex-col m-2" defaultSize={35}>
-                <div className="bg-white p-4 shadow rounded flex-1 flex flex-col max-h-[100%]">
-                  <h2 className="font-bold mb-2">OUTPUT</h2>
-                  <div className="w-full max-h-full flex-1 p-2 border rounded bg-gray-50 overflow-auto">
+              <ResizablePanel className="flex-1 flex flex-col border-[1px] border-border-color rounded-[5pt]" defaultSize={35}>
+                <div className="flex-1 flex flex-col max-h-[100%]">
+                <p className="px-[10pt] py-[5pt] border-b-[1px] text-[16px] border-border-color">Output</p>
+                  <div className="w-full max-h-full flex-1 p-2 bg-white overflow-auto">
                     {loading ? (
                       <div className="flex justify-center items-center h-full">
                         <Spinning />
