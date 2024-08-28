@@ -212,7 +212,7 @@ const App = () => {
 
           <ResizablePanel className="flex-1 flex flex-col m-2">
             <ResizablePanelGroup direction="vertical">
-              <ResizablePanel className="flex-1 flex flex-col mb-2" defaultSize={65}>
+              <ResizablePanel className="flex-1 flex flex-col mb-2 border-[1px] border-border-color rounded-[5pt]" defaultSize={65}>
                 <TraceView ref={traceViewRef} inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={InlineAnnotationView} />
               </ResizablePanel>
 

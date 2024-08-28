@@ -81,8 +81,8 @@ export const TraceView = React.forwardRef<ScrollHandle, TraceViewProps>((props: 
 
   return (
     <div className="traceview">
-      <h2 className="font-bold mb-2">
-        INPUT
+      <h2 className="px-[10pt] py-[5pt] border-b-[1px] text-[16px] border-border-color m-0">
+        Input
         {!sideBySide && (
           <div className="toggle-group">
             <button className={mode === "input" ? "active" : ""} onClick={() => setMode("input")}>

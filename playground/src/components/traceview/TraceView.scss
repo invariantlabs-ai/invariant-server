@@ -14,8 +14,9 @@ body {
     max-height: 100%;
     flex: 1;
     background-color: var(--secondary-background-color);
-    padding: 5pt;
-    padding-top: 10pt;
+    // Playground change: remove padding
+    // padding: 5pt;
+    // padding-top: 10pt;
 
     
     .toggle-group {
@@ -28,8 +29,9 @@ body {
 
     h2 {
         border-bottom: var(--border-color) 1pt solid;
-        padding-bottom: 10pt;
-        margin-left: 5pt;
+        // Playground change: implement in tailwind
+        // padding-bottom: 10pt;
+        // margin-left: 5pt;
 
         button {
             margin: 0pt;
@@ -305,6 +307,7 @@ body {
 .traces {
     padding-bottom: 130pt;
     padding-right: 2pt;
+    padding-left: 2pt;
 
     div.address {
         text-transform: none;
