@@ -11,3 +11,4 @@ wheels/
 .venv
 *.db
 .vite
+.env.local
