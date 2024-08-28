@@ -15,6 +15,8 @@ import { useToast } from "@/components/ui/use-toast";
 import examples from "@/examples";
 import type { AnalysisResult, PolicyError } from "@/lib/types";
 import { beautifyJson, clearTerminalControlCharacters, isDigit } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { BsPlay, BsPlayCircle, BsPlayFill, BsShare } from "react-icons/bs";
 
 const App = () => {
   const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[1].policy || "");
@@ -180,12 +182,18 @@ const App = () => {
           <Examples examples={examples} onSelect={handleExampleSelect} />
         </div>
         <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-          <button onClick={handleShare} className="bg-background hover:bg-gray-100 px-4 py-2 rounded border text-foreground">
+          {/*<button onClick={handleShare} className="bg-background hover:bg-gray-100 px-4 py-2 rounded border text-foreground">
             Share
-          </button>
-          <button onClick={handleEvaluate} className={`bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 ${loading ? "cursor-not-allowed opacity-50" : ""}`} disabled={loading}>
-            {loading ? "Evaluating..." : "Evaluate"}
-          </button>
+          </button>*/}
+          <Button onClick={handleShare} variant="secondary"><BsShare className="inline relative mr-[5pt]"/>Share</Button>
+          <Button onClick={handleEvaluate} disabled={loading}>
+            {loading ? (
+              <Spinning className="h-5 w-5 text-white mr-[5pt]"/>
+            ) : (
+              <BsPlayFill className="inline relative mr-[5pt] h-5 w-5"/>
+            )}
+            Evaluate
+          </Button>
         </div>
       </nav>
 

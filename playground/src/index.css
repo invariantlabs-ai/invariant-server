@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: NeueMontreal;
+  src: url("/theme/NeueMontreal-Regular.otf") format("opentype");
+}
+
+@font-face {
+  font-family: NeueMontreal;
+  src: url("/theme/NeueMontreal-Medium.otf") format("opentype");
+  font-weight: 500;
+}
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -10,10 +20,10 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 234 25% 30%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 243 12% 71%;
+    --secondary-foreground: 0 0% 100%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96.1%;
@@ -57,6 +67,18 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+}
+
+body {
+    font-family: NeueMontreal, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    margin: 0;
+    padding: 0;
+
+    position: relative;
+    overflow-x: hidden;
+
+    -webkit-font-smoothing: antialiased!important;
+    text-rendering: optimizeLegibility;
 }
 
 @layer base {
