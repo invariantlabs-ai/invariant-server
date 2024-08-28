@@ -1,7 +1,7 @@
 import { Base64 } from "js-base64";
 import { useEffect, useRef, useState } from "react";
 import React from "react";
-import { BsPlay, BsPlayCircle, BsPlayFill, BsShare } from "react-icons/bs";
+import { BsPlayFill, BsShare } from "react-icons/bs";
 import { useWindowSize } from "usehooks-ts";
 
 import InvariantLogoIcon from "@/assets/logo";
@@ -175,10 +175,12 @@ const App = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      <nav className="bg-background text-foreground p-4 border-b-2 flex flex-col sm:flex-row items-center justify-between">
+      <nav className="bg-background text-foreground px-4 py-1 border-b-[1px] border-border-color flex flex-col sm:flex-row items-center justify-between">
         <div className="flex items-center space-x-2">
-          <InvariantLogoIcon />
-          <h1 className="text-lg">Invariant Playground</h1>
+          <div className="flex items-center space-x-2 text-[16pt] font-medium transition-colors duration-200 py-[2pt] px-[5pt] rounded-[4pt] h-[30pt] my-[10pt] -ml-[2pt] hover:cursor-pointer hover:bg-black/[0.08]">
+            <InvariantLogoIcon className="h-[20pt] w-[20pt]" />
+            <h1 className="text-lg">Invariant Playground</h1>
+          </div>
           <Examples examples={examples} onSelect={handleExampleSelect} />
         </div>
         <div className="flex items-center space-x-4 mt-4 sm:mt-0">
@@ -199,9 +201,9 @@ const App = () => {
 
       <div className="flex-1">
         <ResizablePanelGroup direction={screenWidth > 768 ? "horizontal" : "vertical"}>
-          <ResizablePanel className="flex-1 flex flex-col m-2">
+          <ResizablePanel className="flex-1 flex flex-col m-2 border-[1px] border-border-color rounded-[5pt]">
             <div className="flex-1 flex flex-col">
-              <h2 className="font-bold mb-2 m-2">POLICY</h2>
+              <p className="px-[10pt] py-[5pt] border-b-[1px] text-[16px] border-border-color">Policy</p>
               <PolicyEditor height="100%" defaultLanguage="python" value={policyCode} onChange={(value?: string) => setPolicyCode(value || "")} theme="vs-light" />
             </div>
           </ResizablePanel>
