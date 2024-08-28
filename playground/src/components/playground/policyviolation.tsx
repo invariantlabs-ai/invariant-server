@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BsArrowDown, BsArrowsMove, BsArrowUp, BsCheckCircle, BsChevronDown, BsChevronRight,BsExclamationTriangle } from "react-icons/bs";
+import { BsArrowDown, BsArrowUp, BsCheckCircle, BsChevronDown, BsChevronRight,BsExclamationTriangle } from "react-icons/bs";
 
 import type { PolicyError } from "@/lib/types";
 
