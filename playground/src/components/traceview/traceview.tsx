@@ -4,9 +4,10 @@ import Editor, { Monaco } from "@monaco-editor/react";
 import { editor as MonacoEditor } from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
 import React from "react";
-import { BsCaretDownFill, BsCaretRightFill, BsChatFill,BsPersonFill, BsRobot } from "react-icons/bs";
+import { BsArrowsCollapse, BsArrowsExpand, BsCaretDownFill, BsCaretRightFill, BsChatFill,BsDownload,BsPersonFill, BsRobot } from "react-icons/bs";
 
 import { AnnotatedJSON, Annotation, GroupedAnnotation } from "@/components/traceview/annotations";
+import { Button } from "@/components/ui/button";
 
 export interface Highlight {
   content: string[];
@@ -81,18 +82,25 @@ export const TraceView = React.forwardRef<ScrollHandle, TraceViewProps>((props: 
 
   return (
     <div className="traceview">
-      <h2 className="px-[10pt] py-[5pt] border-b-[1px] text-[16px] border-border-color m-0">
-        Input
-        {!sideBySide && (
-          <div className="toggle-group">
-            <button className={mode === "input" ? "active" : ""} onClick={() => setMode("input")}>
-              <span className="inner">Edit</span>
-            </button>
-            <button className={mode === "trace" ? "active" : ""} onClick={() => setMode("trace")}>
-              <span className="inner">Preview</span>
-            </button>
-          </div>
-        )}
+      <h2 className="px-[10pt] py-[5pt] border-b-[1px] text-[16px] border-border-color m-0 flex justify-between items-center">
+        <div>
+          Input
+          {!sideBySide && (
+            <div className="toggle-group">
+              <button className={mode === "input" ? "active" : ""} onClick={() => setMode("input")}>
+                <span className="inner">Edit</span>
+              </button>
+              <button className={mode === "trace" ? "active" : ""} onClick={() => setMode("trace")}>
+                <span className="inner">Preview</span>
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button className="p-4 h-[40px] w-[42px] rounded-[10px]" variant="inline" onClick={() => console.log('Collapse')}><BsArrowsCollapse /></Button>
+          <Button className="p-4 h-[40px] w-[42px] rounded-[10px]" variant="inline" onClick={() => console.log('Expand')}><BsArrowsExpand /></Button>
+          <Button className="p-4 h-[40px] w-[42px] rounded-[10px]" variant="inline" onClick={() => console.log('Download')}><BsDownload /></Button>
+        </div>
       </h2>
       {!sideBySide && (
         <div className={"content"}>
