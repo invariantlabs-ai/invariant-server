@@ -38,6 +38,7 @@ const App = () => {
     try {
       const decodedData = JSON.parse(Base64.decode(hash));
       if (decodedData.policy && decodedData.input) {
+        decodedData.input = beautifyJson(decodedData.input);
         setPolicyCode(decodedData.policy);
         setInputData(decodedData.input);
         setOutput("");
