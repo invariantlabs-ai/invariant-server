@@ -10,6 +10,9 @@ Analyzes a trace against a specified policy.
 - `trace` (array): Sequence of messages with `role` and `content`.
 - `policy` (string): Policy script defining evaluation conditions.
 
+**Headers:**
+- `Cache-Control` (optional): Set to `no-cache` to bypass caching and force a fresh analysis.
+
 **Response:**
 - Returns analysis result or error details.
 
@@ -21,6 +24,9 @@ Checks past and pending events against a policy.
 - `past_events` (array): List of occurred events.
 - `pending_events` (array): List of upcoming events.
 - `policy` (string): Policy script for event evaluation.
+
+**Headers:**
+- `Cache-Control` (optional): Set to `no-cache` to bypass caching and force a fresh analysis.
 
 **Response:**
 - Returns check result or error details.
