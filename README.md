@@ -7,8 +7,8 @@ REST API Server made to run Invariant policies remotely.
 ```bash
 git clone https://github.com/invariantlabs-ai/invariant-server
 cd invariant-server
-docker build -t invariant-server .
-docker run -e PRODUCTION=true -e PROMETHEUS_TOKEN=token --privileged -d -p8000:8000 invariant-server
+cp .env.example .env
+docker-compose up -d --build
 ```
 
 ## Environment Variables
@@ -18,9 +18,9 @@ docker run -e PRODUCTION=true -e PROMETHEUS_TOKEN=token --privileged -d -p8000:8
 
 ## Production
 
-The `--privileged` flag is required to run each session policy in its own [nsjail](https://nsjail.dev/). This is required to ensure isolation between multiple users running policies on the same server.
+The `docker-compose.yml` file is configured to run the container with the necessary privileges and settings for production use, including nsjail isolation.
 
-Note that `PRODUCTION=true` requires the `--privileged` flag.
+Note that `PRODUCTION=true` requires privileged mode, which is already set in the docker-compose file. **Disable** privileges if not running in production mode.
 
 If running ubuntu 23.10 or later, you need to run these commands on the host:
 ```

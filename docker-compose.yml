@@ -11,8 +11,6 @@ services:
       - .env
     volumes:
       - app_logs:/home/app/server/logs
-    environment:
-      - PRODUCTION=true
     privileged: true
     security_opt:
       - seccomp:unconfined
