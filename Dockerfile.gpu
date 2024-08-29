@@ -1,47 +1,47 @@
-FROM node:20 as frontend-builder
-
+FROM node:20-slim as frontend-builder
 WORKDIR /app
-
 COPY ./playground/package*.json ./
-RUN npm install
-
+RUN npm ci
 COPY ./playground/ ./
 RUN npm run build
 
-FROM gcr.io/kctf-docker/challenge
+FROM gcr.io/kctf-docker/challenge as nsjail-source
 
-RUN useradd --create-home --shell /bin/bash app
-RUN apt-get -y update && apt-get install -y git curl
+FROM python:3.12.3-slim
 
+COPY --from=nsjail-source /usr/bin/nsjail /usr/bin/nsjail
 RUN chmod u+s /usr/bin/nsjail
 
-# install rye
-RUN curl -sSf https://rye.astral.sh/get | RYE_HOME="/home/app/.rye" RYE_INSTALL_OPTION="--yes" RYE_TOOLCHAIN_VERSION="3.12.3" bash
+RUN useradd --create-home --shell /bin/bash app && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends git curl && \
+    echo "deb http://deb.debian.org/debian buster main" >> /etc/apt/sources.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends libprotobuf17 libnl-3-200 libnl-route-3-200 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 USER app
 WORKDIR /home/app
 
-COPY --chown=app requirements.lock ./
-COPY --chown=app pyproject.toml ./
-COPY --chown=app .python-version ./
-COPY --chown=app README.md ./
+ENV RYE_HOME="/home/app/.rye" \
+    PATH="/home/app/.rye/shims:${PATH}"
 
-RUN /bin/bash -c 'source /home/app/.rye/env && rye sync --all-features'
+RUN curl -sSf https://rye.astral.sh/get | RYE_INSTALL_OPTION="--yes" RYE_TOOLCHAIN="/usr/local/bin/python" UV_NO_CACHE=1 bash
 
-ENV PATH="/home/app/.rye/shims:${PATH}"
+COPY --chown=app requirements.lock pyproject.toml .python-version README.md ./
 
-# Cache models download
+RUN /bin/bash -c 'source $RYE_HOME/env && UV_NO_CACHE=1 rye sync --all-features' && \
+    curl https://semgrep.dev/c/r/bash -s -o /tmp/bash && \
+    curl https://semgrep.dev/c/r/python.lang.security -s -o /tmp/python.lang.security
 RUN rye run python3 -c 'import presidio_analyzer; a = presidio_analyzer.AnalyzerEngine(); a.analyze("text", language="en")'
 RUN rye run python3 -c 'from huggingface_hub import snapshot_download; snapshot_download(repo_id="protectai/deberta-v3-base-prompt-injection-v2"); snapshot_download(repo_id="KoalaAI/Text-Moderation")'
-RUN curl https://semgrep.dev/c/r/bash -s -o /tmp/bash
-RUN curl https://semgrep.dev/c/r/python.lang.security -s -o /tmp/python.lang.security
 
-COPY server ./server
-COPY --from=frontend-builder /app/dist ./playground/dist
+COPY --chown=app server ./server
+COPY --from=frontend-builder --chown=app /app/dist ./playground/dist
 
 USER root
 RUN chown -R app:app /home/app/server/logs
-
 USER app
 
 EXPOSE 8000
