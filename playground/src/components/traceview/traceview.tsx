@@ -2,10 +2,9 @@ import "./TraceView.scss";
 
 import Editor, { Monaco } from "@monaco-editor/react";
 import { editor as MonacoEditor } from "monaco-editor";
-import { useEffect, useRef, useState } from "react";
-import React from "react";
-import { BsArrowsCollapse, BsArrowsExpand, BsCaretDownFill, BsCaretRightFill, BsChatFill,BsDownload,BsPersonFill, BsRobot } from "react-icons/bs";
-import {v5 as uuidv5} from 'uuid';
+import React, { useEffect, useRef, useState } from "react";
+import { BsArrowsCollapse, BsArrowsExpand, BsCaretDownFill, BsCaretRightFill, BsChatFill, BsDownload, BsPersonFill, BsRobot } from "react-icons/bs";
+import { v5 as uuidv5 } from 'uuid';
 
 import { AnnotatedJSON, Annotation, GroupedAnnotation } from "@/components/traceview/annotations";
 import { Button } from "@/components/ui/button";
@@ -38,10 +37,14 @@ export interface ScrollHandle {
   setScroll(position: "top" | number, path?: string): void;
 }
 
+export interface ExpandCollapseHandle {
+  expandCollapseAll(state: boolean): void;
+}
+
 export const TraceView = React.forwardRef<ScrollHandle, TraceViewProps>((props: TraceViewProps, ref) => {
   const { inputData, handleInputChange, annotations } = props;
   const [annotatedJSON, setAnnotatedJSON] = useState<AnnotatedJSON | null>(null);
-  const traceEditorRef = useRef<ScrollHandle | null>(null);
+  const traceEditorRef = useRef<(ScrollHandle & ExpandCollapseHandle) | null>(null);
   const renderedTraceContainerRef = useRef<HTMLDivElement>(null);
   const renderedTraceRef = useRef<RenderedTrace>(null);
 
@@ -71,6 +74,7 @@ export const TraceView = React.forwardRef<ScrollHandle, TraceViewProps>((props: 
         }
       }
     },
+
   }));
 
   const [mode, setMode] = useState<"input" | "trace">("trace");
@@ -91,6 +95,24 @@ export const TraceView = React.forwardRef<ScrollHandle, TraceViewProps>((props: 
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const collapseAll = () => {
+    if (traceEditorRef.current) {
+      traceEditorRef.current.expandCollapseAll(true);
+    }
+    if (renderedTraceRef.current) {
+      renderedTraceRef.current.collapseAll();
+    }
+  };
+
+  const expandAll = () => {
+    if (traceEditorRef.current) {
+      traceEditorRef.current.expandCollapseAll(false);
+    }
+    if (renderedTraceRef.current) {
+      renderedTraceRef.current.expandAll();
+    }
   };
 
   useEffect(() => {
@@ -114,8 +136,8 @@ export const TraceView = React.forwardRef<ScrollHandle, TraceViewProps>((props: 
           )}
         </div>
         <div className="flex gap-2">
-          <Button className="p-4 h-[40px] w-[42px] rounded-[10px]" variant="inline" onClick={() => console.log('Collapse')}><BsArrowsCollapse /></Button>
-          <Button className="p-4 h-[40px] w-[42px] rounded-[10px]" variant="inline" onClick={() => console.log('Expand')}><BsArrowsExpand /></Button>
+          <Button className="p-4 h-[40px] w-[42px] rounded-[10px]" variant="inline" onClick={() => collapseAll()}><BsArrowsCollapse /></Button>
+          <Button className="p-4 h-[40px] w-[42px] rounded-[10px]" variant="inline" onClick={() => expandAll()}><BsArrowsExpand /></Button>
           <Button className="p-4 h-[40px] w-[42px] rounded-[10px]" variant="inline" onClick={() => download(props.inputData)}><BsDownload /></Button>
         </div>
       </h2>
@@ -147,7 +169,7 @@ interface TraceEditorProps {
   handleInputChange: (value: string | undefined) => void;
   annotations: AnnotatedJSON;
 }
-export const TraceEditor = React.forwardRef<ScrollHandle, TraceEditorProps>((props, ref) => {
+export const TraceEditor = React.forwardRef<ScrollHandle & ExpandCollapseHandle, TraceEditorProps>((props, ref) => {
   const [editor, setEditor] = useState<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const [monaco, setMonaco] = useState<Monaco | null>(null);
   const [editorDecorations, setEditorDecorations] = useState<MonacoEditor.IEditorDecorationsCollection>();
@@ -167,6 +189,33 @@ export const TraceEditor = React.forwardRef<ScrollHandle, TraceEditorProps>((pro
         }
       }
     },
+    expandCollapseAll: (expand: boolean) => {
+      if (!editor || !monaco) return;
+
+      const model = editor.getModel();
+      if (!model) return;
+    
+      const lastLineNumber = model.getLineCount();
+      
+      // Create a selection from the first to the last line
+      editor.setSelection(new monaco.Selection(1, 1, lastLineNumber, 1));
+    
+      if (expand) {
+        // Create a folding range from the selection and fold it
+        editor.trigger('fold', 'editor.foldAll', {});
+        editor.trigger('unfold', 'editor.unfold', {
+          levels: 1,
+          direction: 'down',
+          selectionLines: [1],
+        });
+      } else {
+        // Unfold the entire selection
+        editor.trigger('fold', 'editor.unfoldAll', {});
+      }
+    
+      // Clear the selection
+      editor.setSelection(new monaco.Selection(1, 1, 1, 1));
+    }
   }));
 
   // when annotations or pointers change, re-create the highlighted ranges from new sourcemap and annotations
@@ -235,6 +284,7 @@ interface RenderedTraceState {
   parsed: any | null;
   traceString: string;
   selectedAnnotationAddress: string | null;
+  expanded: boolean;
 }
 
 interface AnnotationContext {
@@ -255,6 +305,7 @@ export class RenderedTrace extends React.Component<RenderedTraceProps, RenderedT
       parsed: null,
       traceString: "",
       selectedAnnotationAddress: null,
+      expanded: false,
     };
 
     this.messageRefs = [];
@@ -273,6 +324,14 @@ export class RenderedTrace extends React.Component<RenderedTraceProps, RenderedT
       return this.messageRefs[index].current.getBoundingClientRect();
     }
     return null;
+  }
+
+  expandAll() {
+    this.setState({ expanded: false });
+  }
+
+  collapseAll() {
+    this.setState({ expanded: true });
   }
 
   parse() {
@@ -323,6 +382,7 @@ export class RenderedTrace extends React.Component<RenderedTraceProps, RenderedT
                 annotations={this.props.annotations.for_path("messages." + index)}
                 annotationContext={annotationContext}
                 address={"messages[" + index + "]"}
+                expanded={this.state.expanded}
               />
             );
           })}
@@ -345,6 +405,7 @@ interface MessageViewProps {
   annotations: AnnotatedJSON;
   annotationContext?: AnnotationContext;
   address: string;
+  expanded?: boolean;
 }
 
 function RoleIcon(props: { role: string }) {
@@ -417,7 +478,7 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
 
     this.state = {
       error: null,
-      expanded: false,
+      expanded: props.expanded === true ? true : false,
     };
 
     this.ref = React.createRef();
@@ -426,6 +487,12 @@ class MessageView extends React.Component<MessageViewProps, { error: Error | nul
   getBoundingClientRect() {
     if (!this.ref.current) return null;
     return this.ref.current.getBoundingClientRect();
+  }
+
+  componentDidUpdate(prevProps: Readonly<MessageViewProps>, _prevState: Readonly<{ error: Error | null; expanded: boolean; }>, _snapshot?: any): void {
+    if (this.props.expanded!== prevProps.expanded) {
+      this.setState({ expanded: this.props.expanded === true ? true : false });
+    }
   }
 
   componentDidCatch(error: Error) {
