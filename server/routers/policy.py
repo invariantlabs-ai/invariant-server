@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from server import schemas
 from server.ipc.controller import get_ipc_controller, IpcController
 from server.logging import log_request
@@ -25,14 +25,20 @@ async def analyze_policy(
     request: Request,
     data: schemas.PolicyAnalyze,
     ipc: IpcController = Depends(get_ipc_controller),
+    cache_control: str | None = Header(None),
 ):
     timestart = datetime.now(timezone.utc).timestamp()
     status_code = 200
     result = {}
     try:
-        result = await cached_analyze(
-            request.state.body_hash, ipc, data.policy, data.trace
-        )
+        if cache_control == "no-cache":
+            result = await ipc.request(
+                {"type": "analyze", "policy": data.policy, "trace": data.trace}
+            )
+        else:
+            result = await cached_analyze(
+                request.state.body_hash, ipc, data.policy, data.trace
+            )
         return result
     except Exception as e:
         status_code = 500

@@ -1,7 +1,7 @@
 from cachetools import LRUCache
 from asyncache import cached
 from cachetools.keys import hashkey
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from server.logging import log_request
 from datetime import datetime, timezone
 import json
@@ -39,18 +39,29 @@ async def monitor_check(
     request: Request,
     data: schemas.MonitorCheck,
     ipc: IpcController = Depends(get_ipc_controller),
+    cache_control: str | None = Header(None),
 ):
     timestart = datetime.now(timezone.utc).timestamp()
     status_code = 200
     result = {}
     try:
-        result = await cached_check(
-            request.state.body_hash,
-            ipc,
-            data.policy,
-            data.past_events,
-            data.pending_events,
-        )
+        if cache_control == "no-cache":
+            result = await ipc.request(
+                {
+                    "type": "monitor_check",
+                    "past_events": data.past_events,
+                    "pending_events": data.pending_events,
+                    "policy": data.policy,
+                }
+            )
+        else:
+            result = await cached_check(
+                request.state.body_hash,
+                ipc,
+                data.policy,
+                data.past_events,
+                data.pending_events,
+            )
         return result
     except Exception as e:
         status_code = 500
