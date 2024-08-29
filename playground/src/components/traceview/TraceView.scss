@@ -1,0 +1,385 @@
+body {
+    --highlight-color: rgba(132, 126, 255, 0.445);
+    --highlight-message: rgba(132, 126, 255, 0.125);
+}
+
+.traceview {
+    --secondary-background-color: #f0f0f097;
+    --border-color: rgb(218, 217, 217);
+
+    display: flex;
+    flex-direction: column;
+    font-size: 12pt;
+    min-height: 0pt;
+    max-height: 100%;
+    flex: 1;
+    background-color: var(--secondary-background-color);
+    // Playground change: remove padding
+    // padding: 5pt;
+    // padding-top: 10pt;
+
+    
+    .toggle-group {
+        background-color: rgba(0, 0, 0, 0.01);
+        border: 1pt solid var(--border-color);
+        display: inline-block;
+        margin: 0pt 10pt;
+        border-radius: 5pt;
+    }
+
+    h2 {
+        border-bottom: var(--border-color) 1pt solid;
+        // Playground change: implement in tailwind
+        // padding-bottom: 10pt;
+        // margin-left: 5pt;
+
+        button {
+            margin: 0pt;
+            font-weight: normal;
+            padding: 1pt 2pt;
+            cursor: pointer;
+
+            &:hover {
+                box-shadow: 0pt 0pt -5pt 0pt rgba(0, 0, 0, 0.1);
+            }
+
+            .inner {
+                margin: 1pt 2pt;
+                display: inline-block;
+                padding: 2pt 6pt;
+                border-radius: 3pt;
+                transition: background-color 0.2s;
+                background-color: transparent;
+
+                &:hover {
+                    background-color: rgba(0, 0, 0, 0.05);
+                }
+            }
+        }
+
+        button.active {
+            background-color: white;
+            border-radius: 5pt;
+            font-weight: bold;
+            border: 1pt solid var(--border-color);
+            transform: scale(1.05);
+
+            .inner {
+                background: transparent;
+            }
+        }
+    }
+
+    .content {
+        flex: 1;
+        position: relative;
+
+        .tab {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+
+            opacity: 0.0;
+            z-index: -100;
+
+            overflow-y: auto;
+            overflow-x: hidden;
+
+            &.active {
+                opacity: 1.0;
+                z-index: 0;
+            }
+        }
+    }
+
+    .sidebyside {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        max-height: calc(100% - 50pt);
+        min-height: auto;
+
+        .side {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        .side:first-of-type {
+            margin-right: 5pt;
+        }
+    }
+
+    .error {
+        color: red;
+        height: 100%;
+        
+        h3 {
+            font-weight: bold;
+            margin-bottom: 10pt;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            background-color: #f0f0f0;
+            text-align: left;
+            padding: 10pt;
+        }
+    }
+}
+
+.message {
+    border-radius: 5pt;
+    border: 1pt solid var(--border-color);
+    background-color: white;
+    margin: 5pt 0pt;
+
+    &.parser-error {
+        border: 1pt solid darkred;
+    }
+
+    .content.error {
+        padding: 0pt;
+
+        p {
+            padding: 5pt;
+        }
+    }
+
+    .content {
+        padding: 5pt;
+        // break anywhere if needed, otherwise break at word
+        word-break: break-word;
+        white-space: pre-wrap;
+    }
+
+    &.highlight {
+        // highlight color as background by at 0.1 opacity
+        background-color: var(--highlight-message);
+        border: 1pt solid var(--highlight-color);
+    }
+
+    .content.tool {
+        font-family: monospace;
+        font-size: 1.1em;
+        white-space: pre-wrap;
+    }
+
+    .role {
+        padding: 4pt 5pt;
+        text-transform: uppercase;
+        font-weight: bold;
+        font-size: 0.8em;
+        user-select: none;
+        -webkit-user-select: none;
+        cursor: default;
+        color: rgba(0, 0, 0, 0.587);
+        font-size: 0.7em;
+        position: relative;
+        cursor: pointer;
+        
+        svg {
+            display: inline-block;
+            position: relative;
+            top: -1pt;
+            margin-right: 2pt;
+        }
+        
+        svg:last-of-type {
+            margin-right: 3pt;
+        }
+
+        &.seamless {
+            border-bottom: none;
+        }
+
+        span.badge {
+            color: rgba(0, 0, 0, 0.565);
+            margin-left: 5pt;
+            padding: 2pt;
+            border-radius: 3pt;
+            text-transform: none;
+            font-size: 0.8em;
+        }
+    }
+
+    .tool-calls:not(.seamless) {
+        border-top: 1pt solid var(--border-color);
+    }
+
+    .tool-call {
+        .function-name {
+            padding: 5pt;
+            font-family: monospace;
+            background-color: rgba(0, 0, 0, 0.01);
+            background-size: 5pt 5pt;
+            border-bottom: 1pt solid var(--border-color);
+            position: relative;
+
+            .address {
+                top: 7pt;
+            }
+        }
+
+        .arguments {
+            padding: 0pt;
+        }
+
+        &.highlight {
+            background-color: var(--highlight-message);
+        }
+
+        pre {
+            white-space: pre-wrap;
+        }
+    }
+
+    span.line {
+        cursor: pointer;
+
+        &:hover {
+            background-color: rgba(0, 0, 0, 0.07);
+            padding: 2pt 0pt;
+            border-radius: 2pt;
+        }
+    }
+
+    span.annotated-parent {
+        // do not indent first line of p
+        margin-left: -3pt;
+    }
+
+    span.annotated {
+        background-color: var(--highlight-color);
+        padding-right: 0pt;
+        border-radius: 2pt;
+        position: relative;
+
+        div.annotations {
+            display: none;
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.402);
+            backdrop-filter: blur(5pt);
+            top: calc(100%);
+            left: 0pt;
+            min-width: 500pt;
+            overflow: visible;
+            word-break: break-word;
+            white-space: pre-wrap;
+            border: 1pt solid var(--border-color);
+            padding: 5pt;
+            border-radius: 5pt;
+            z-index: 100;
+        }
+
+        div.annotations:before {
+            content: "";
+            position: absolute;
+            top: -40pt;
+            width: 300pt;
+            height: 40pt;
+            background-color: transparent;
+            display: block;
+        }
+
+        &:hover {
+            div.annotations {
+                display: block;
+            }
+        }
+    }
+}
+
+.view-overlays {
+    div.highlight {
+        background-color: var(--highlight-color);
+        box-shadow: 0pt 0pt 1pt 0pt rgba(0, 0, 0, 0.5);
+        border-radius: 1pt;
+    }
+
+    div.light.highlight {
+        opacity: 0.4; 
+    }
+}
+
+.traces {
+    padding-bottom: 130pt;
+    padding-right: 2pt;
+    padding-left: 2pt;
+
+    div.address {
+        text-transform: none;
+        opacity: 0.4;
+        font-weight: normal;
+        font-family: monospace;
+        font-size: 0.8em;
+        position: absolute;
+        top: 5pt;
+        right: 5pt;
+    }
+}
+
+.tool-call.highlight {
+    div.inline-line-editor {
+        background-color: rgb(247, 247, 247);
+    }
+}
+
+span.nl {
+    user-select: none;
+    -webkit-user-select: none;
+    opacity: 0.3;
+    cursor: default;
+}
+
+table.json {
+    width: 100%;
+    border-collapse: collapse;
+
+    td {
+        padding: 5pt;
+        background-color: rgba(0, 0, 0, 0.04);
+        border-bottom: 1pt solid white;
+        border-right: 1pt solid white;
+    }
+
+    tr td:last-child {
+        border-right: none;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr {
+        margin-bottom: 2pt;
+    }
+
+    tr td:first-child {
+        padding-left: 0pt;
+        text-align: right;
+        vertical-align: top;
+        padding-left: 10pt;
+    }
+
+    tr td {
+        padding-left: 7pt;
+    }
+}
+
+
+div.inline-line-editor {
+    width: calc(100% + 4pt);
+    background-color: var(--secondary-background-color);
+    border-top: 1pt solid var(--border-color);
+    border-bottom: 1pt solid var(--border-color);
+    position: relative;
+    left: -5pt;
+    padding-left: 5pt;
+    margin-top: 5pt;
+    margin-bottom: 10pt;
+    width: calc(100% + 10pt);
+    padding: 5pt 5pt;
+}

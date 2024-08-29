@@ -7,20 +7,24 @@ dependencies = [
     "uvicorn>=0.30.1",
     "invariant @ git+https://github.com/invariantlabs-ai/invariant.git",
     "pydantic-settings>=2.3.4",
-    ### Invariant extra dependencies
+    "cachetools>=5.5.0",
+    "asyncache>=0.3.1",
+    "prometheus-fastapi-instrumentator>=7.0.0",
+    "aiosqlite>=0.20.0",
+    "fastapi-utils>=0.7.0",
+]
+readme = "README.md"
+requires-python = ">= 3.10"
+
+[project.optional-dependencies]
+full = [
     "presidio-analyzer>=2.2.354",
     "spacy>=3.7.5",
-    "fastapi-utils>=0.7.0",
-    "typing-inspect>=0.9.0",
     "huggingface-hub>=0.24.5",
     "transformers>=4.44.0",
     "torch>=2.4.0",
     "numpy<2",
-    "cachetools>=5.5.0",
-    "asyncache>=0.3.1",
 ]
-readme = "README.md"
-requires-python = ">= 3.10"
 
 [build-system]
 requires = ["hatchling"]
@@ -32,6 +36,7 @@ dev-dependencies = [
     "pytest>=8.2.2",
     "requests>=2.32.3",
     "ruff>=0.5.1",
+    "typing-inspect>=0.9.0",
 ]
 
 [tool.hatch.metadata]

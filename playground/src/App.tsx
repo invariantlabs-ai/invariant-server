@@ -1,42 +1,64 @@
-import { useState, useEffect } from "react";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { Base64 } from "js-base64";
+import { useEffect, useRef, useState } from "react";
+import React from "react";
+import { BsPlayFill, BsShare } from "react-icons/bs";
+import { useWindowSize } from "usehooks-ts";
+
+import InvariantLogoIcon from "@/assets/logo";
+import Spinning from "@/assets/spinning";
+import Examples from "@/components/examples";
+import { PolicyEditor } from "@/components/playground/policyeditor";
+import { PolicyViolation } from "@/components/playground/policyviolation";
+import { InlineAnnotationView, ScrollHandle, TraceView } from "@/components/traceview/traceview";
+import { Button } from "@/components/ui/button";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/components/ui/use-toast";
-import Editor from "@monaco-editor/react";
-import InvariantLogoIcon from "@/assets/logo";
-import Examples from "@/components/Examples";
 import examples from "@/examples";
+import type { AnalysisResult, PolicyError } from "@/lib/types";
+import { beautifyJson, clearTerminalControlCharacters, isDigit } from "@/lib/utils";
 
 const App = () => {
-  const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[0].policy);
-  const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || examples[0].input);
-  const [output, setOutput] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [policyCode, setPolicyCode] = useState<string>(localStorage.getItem("policy") || examples[1].policy || "");
+  const [inputData, setInputData] = useState<string>(localStorage.getItem("input") || examples[1].input || "");
+  const traceViewRef = useRef<ScrollHandle>(null);
   const { toast } = useToast();
+  const { width: screenWidth } = useWindowSize({debounceDelay: 100});
 
-  const isDigit = (str: string) => {
-    return /^\d+$/.test(str);
+  // output and ranges
+  const [loading, setLoading] = useState<boolean>(false);
+  const [output, setOutput] = useState<string | AnalysisResult>("");
+  const [ranges, setRanges] = useState<Record<string, string>>({});
+
+  const handleDigitHash = (hash: string) => {
+    handleExampleSelect(parseInt(hash, 10)); // Convert to int and call handleExampleSelect
+  };
+
+  const handleBase64Hash = (hash: string) => {
+    try {
+      const decodedData = JSON.parse(Base64.decode(hash));
+      if (decodedData.policy && decodedData.input) {
+        decodedData.input = beautifyJson(decodedData.input);
+        setPolicyCode(decodedData.policy);
+        setInputData(decodedData.input);
+        setOutput("");
+        setRanges({});
+        localStorage.setItem("policy", decodedData.policy);
+        localStorage.setItem("input", decodedData.input);
+      }
+    } catch (error) {
+      console.error("Failed to decode or apply hash data:", error);
+    }
   };
 
   const handleHashChange = () => {
     const hash = window.location.hash.substring(1); // Get hash value without the '#'
     if (isDigit(hash)) {
-      handleExampleSelect(parseInt(hash, 10)); // Convert to int and call handleExampleSelect
+      handleDigitHash(hash);
     } else if (hash) {
-      try {
-        const decodedData = JSON.parse(atob(hash));
-        if (decodedData.policy && decodedData.input) {
-          setPolicyCode(decodedData.policy);
-          setInputData(decodedData.input);
-          localStorage.setItem("policy", decodedData.policy);
-          localStorage.setItem("input", decodedData.input);
-        }
-      } catch (error) {
-        console.error("Failed to decode or apply hash data:", error);
-      }
+      handleBase64Hash(hash);
     }
-    window.location.hash = "";
-    history.replaceState(null, "", " ");
+    window.history.replaceState(null, "", " ");
   };
 
   useEffect(() => {
@@ -53,9 +75,15 @@ const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const setScroll = function (position: "top" | number, path?: string) {
+    if (traceViewRef.current) traceViewRef.current.setScroll(position, path);
+  };
+
   const handleEvaluate = async () => {
     setLoading(true); // Start loading
     setOutput(""); // Clear previous output
+    setRanges({}); // Clear previous ranges
+    setScroll("top");
 
     try {
       // Save policy and input to localStorage
@@ -67,30 +95,40 @@ const App = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Cache-Control": "force-cache",
         },
         body: JSON.stringify({ trace: JSON.parse(inputData), policy: policyCode }),
       });
 
-      const analyzeData = await analyzeResponse.json();
-      if (typeof analyzeData === "string") {
-        setOutput(analyzeData);
-      } else {
-        setOutput(JSON.stringify(analyzeData, null, 2));
+      if (analyzeResponse.status !== 200) {
+        throw new Error(analyzeResponse.statusText);
       }
+
+      const analysisResult: string | AnalysisResult = await analyzeResponse.json();
+
+      // check for error messages
+      if (typeof analysisResult === "string") {
+        setOutput(clearTerminalControlCharacters(analysisResult));
+        setRanges({});
+        setLoading(false);
+        return;
+      }
+
+      const annotations: Record<string, string> = {};
+      analysisResult.errors.forEach((e: PolicyError) => {
+        e.ranges.forEach((r: string) => {
+          annotations[r] = e["error"];
+        });
+      });
+      setRanges(annotations);
+      //setOutput(JSON.stringify(analysisResult, null, 2));
+      setOutput(analysisResult);
     } catch (error) {
       console.error("Failed to evaluate policy:", error);
-      setOutput("An error occurred during evaluation. Please check browser console for details.");
+      setRanges({});
+      setOutput("An error occurred during evaluation: " + (error as Error).message);
     } finally {
       setLoading(false); // End loading
-    }
-  };
-
-  const beautifyJson = (jsonString: string) => {
-    try {
-      const parsedJson = JSON.parse(jsonString);
-      return JSON.stringify(parsedJson, null, 2); // 2-space indentation
-    } catch {
-      return jsonString; // If it's not valid JSON, return the original string
     }
   };
 
@@ -106,15 +144,20 @@ const App = () => {
     if (exampleIndex < 0 || exampleIndex >= examples.length) return;
 
     const selectedExample = examples[exampleIndex];
+
+    if (!selectedExample.policy || !selectedExample.input) return;
+
     setPolicyCode(selectedExample.policy);
     setInputData(selectedExample.input);
+    setOutput("");
+    setRanges({});
     localStorage.setItem("policy", selectedExample.policy);
     localStorage.setItem("input", selectedExample.input);
   };
 
   const handleShare = () => {
     const data = JSON.stringify({ policy: policyCode, input: inputData });
-    const encodedData = btoa(data);
+    const encodedData = Base64.encode(data);
     const shareUrl = `${window.location.origin}${window.location.pathname}#${encodedData}`;
 
     navigator.clipboard
@@ -134,57 +177,83 @@ const App = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      <nav className="bg-background text-foreground p-4 border-b-2 flex items-center justify-between">
+      <nav className="bg-background text-foreground px-4 py-1 border-b-[1px] border-border-color flex flex-col sm:flex-row items-center justify-between">
         <div className="flex items-center space-x-2">
-          <InvariantLogoIcon />
-          <h1 className="text-lg">Invariant Playground</h1>
+          <div className="flex items-center space-x-2 text-[16pt] font-medium transition-colors duration-200 py-[2pt] px-[5pt] rounded-[4pt] h-[30pt] my-[10pt] -ml-[2pt] hover:cursor-pointer hover:bg-black/[0.08]">
+            <InvariantLogoIcon className="h-[20pt] w-[20pt]" />
+            <h1 className="text-lg">Invariant Playground</h1>
+          </div>
           <Examples examples={examples} onSelect={handleExampleSelect} />
         </div>
-        <div className="flex items-center space-x-4">
-          <button onClick={handleShare} className="bg-background hover:bg-gray-100 px-4 py-2 rounded border text-black">
+        <div className="flex items-center space-x-4 mb-2 sm:mb-0">
+          {/*<button onClick={handleShare} className="bg-background hover:bg-gray-100 px-4 py-2 rounded border text-foreground">
             Share
-          </button>
-          <button onClick={handleEvaluate} className={`bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 ${loading ? "cursor-not-allowed opacity-50" : ""}`} disabled={loading}>
-            {loading ? "Evaluating..." : "Evaluate"}
-          </button>
+          </button>*/}
+          <Button onClick={handleShare} variant="secondary"><BsShare className="inline relative mr-[5pt]"/>Share</Button>
+          <Button onClick={handleEvaluate} disabled={loading}>
+            {loading ? (
+              <Spinning className="h-5 w-5 text-white mr-[5pt]"/>
+            ) : (
+              <BsPlayFill className="inline relative mr-[5pt] h-5 w-5"/>
+            )}
+            Evaluate
+          </Button>
         </div>
       </nav>
 
       <div className="flex-1">
-        <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel className="flex-1 flex flex-col">
+        <ResizablePanelGroup direction={screenWidth > 768 ? "horizontal" : "vertical"}>
+          <ResizablePanel className="flex-1 flex flex-col m-2 border-[1px] border-border-color rounded-[5pt]">
             <div className="flex-1 flex flex-col">
-              <h2 className="font-bold mb-2 m-2">POLICY</h2>
-              <Editor height="100%" defaultLanguage="python" value={policyCode} onChange={(value) => setPolicyCode(value || "")} theme="vs-light" />
+              <p className="px-[10pt] py-[5pt] border-b-[1px] text-[16px] border-border-color">Policy</p>
+              <PolicyEditor height="100%" defaultLanguage="python" value={policyCode} onChange={(value?: string) => setPolicyCode(value || "")} theme="vs-light" />
             </div>
           </ResizablePanel>
 
-          <ResizableHandle className="w-2 bg-gray-300 hover:bg-gray-500" />
+          <ResizableHandle className="bg-transparent" />
 
-          <ResizablePanel className="flex-1 bg-gray-100 p-4 overflow-y-auto">
+          <ResizablePanel className="flex-1 flex flex-col m-2">
             <ResizablePanelGroup direction="vertical">
-              <ResizablePanel className="flex-1 flex flex-col">
-                <div className="bg-white p-4 shadow rounded mb-4 flex-1 flex flex-col">
-                  <h2 className="font-bold mb-2">INPUT</h2>
-                  <Editor defaultLanguage="json" value={inputData} onChange={handleInputChange} height="100%" theme="vs-light" />
-                </div>
+              <ResizablePanel className="flex-1 flex flex-col mb-2 border-[1px] border-border-color rounded-[5pt]" defaultSize={65}>
+                <TraceView ref={traceViewRef} inputData={inputData} handleInputChange={handleInputChange} annotations={ranges} annotationView={InlineAnnotationView} />
               </ResizablePanel>
 
-              <ResizableHandle className="h-2 bg-gray-300 hover:bg-gray-500" />
+              <ResizableHandle className="bg-transparent" />
 
-              <ResizablePanel className="flex-1 flex flex-col">
-                <div className="bg-white p-4 shadow rounded flex-1 flex flex-col max-h-[100%]">
-                  <h2 className="font-bold mb-2">OUTPUT</h2>
-                  <div className="w-full max-h-full flex-1 p-2 border rounded bg-gray-50 overflow-auto">
+              <ResizablePanel className="flex-1 flex flex-col border-[1px] border-border-color rounded-[5pt]" defaultSize={35}>
+                <div className="flex-1 flex flex-col max-h-[100%]">
+                <p className="px-[10pt] py-[5pt] border-b-[1px] text-[16px] border-border-color">Output</p>
+                  <div className="w-full max-h-full flex-1 p-2 bg-white overflow-auto">
                     {loading ? (
                       <div className="flex justify-center items-center h-full">
-                        <svg className="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                        </svg>
+                        <Spinning />
                       </div>
                     ) : (
-                      <div className="flex-1 overflow-y-auto whitespace-pre-wrap break-words">{output}</div>
+                      <div className="flex-1 overflow-y-auto whitespace-pre-wrap break-words">
+                        {typeof output === "string" ? (
+                          output
+                        ) : output.errors.length > 0 ? (
+                          output.errors.reduce(
+                            (acc: { currentIndex: number; ranges: Record<string, number>; components: React.ReactElement[] }, result, key) => {
+                              for (const range of result.ranges) {
+                                if (acc.ranges[range] === undefined) {
+                                  acc.ranges[range] = acc.currentIndex;
+                                  acc.currentIndex++;
+                                }
+                              }
+                              acc.components.push(
+                                <React.Fragment key={key}>
+                                  <PolicyViolation title={"Policy Violation"} result={result} ranges={acc.ranges} setScroll={setScroll} />
+                                </React.Fragment>
+                              );
+                              return acc;
+                            },
+                            { currentIndex: 0, components: [], ranges: {} }
+                          ).components
+                        ) : (
+                          <PolicyViolation title={"OK"} result={{ error: "No policy violations were detected", ranges: [] }} ranges={{}} setScroll={() => {}} />
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

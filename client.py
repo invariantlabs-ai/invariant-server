@@ -40,7 +40,7 @@ class InvariantClient:
                     "policy": self.policy,
                 },
             )
-            return response.text
+            return response.json()
 
 
 # Example usage

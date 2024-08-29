@@ -10,6 +10,7 @@ from invariant.stdlib.invariant.detectors import (
     semgrep,
 )
 from invariant.stdlib.invariant.nodes import Message
+
 from invariant.runtime.utils.code import CodeIssue
 from typing import List, Dict
 import os
@@ -19,7 +20,13 @@ def analyze(policy: str, trace: List[Dict]):
     policy = Policy.from_string(policy)
     analysis_result = policy.analyze(trace)
     return {
-        "errors": [repr(error) for error in analysis_result.errors],
+        "errors": [
+            {
+                "error": repr(error),
+                "ranges": ["messages." + r.json_path for r in error.ranges],
+            }
+            for error in analysis_result.errors
+        ],
         "handled_errors": [
             repr(handled_error) for handled_error in analysis_result.handled_errors
         ],
@@ -45,7 +52,12 @@ def handle_request(data):
 
 def worker(client_socket):
     try:
-        data = client_socket.recv(10 * 1024 * 1024)
+        data = b""
+        while True:
+            chunk = client_socket.recv(4096)
+            if not chunk:
+                break
+            data += chunk
         response = handle_request(data)
         client_socket.sendall(response)
     except Exception as e:

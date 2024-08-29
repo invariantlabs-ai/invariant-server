@@ -2,18 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: NeueMontreal;
+  src: url("/theme/NeueMontreal-Regular.otf") format("opentype");
+}
+
+@font-face {
+  font-family: NeueMontreal;
+  src: url("/theme/NeueMontreal-Medium.otf") format("opentype");
+  font-weight: 500;
+}
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 0 0% 96.5%;
     --foreground: 222.2 84% 4.9%;
+    --border-color: 0 1.3% 85.3%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 234 25% 30%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 243 12% 71%;
+    --secondary-foreground: 0 0% 100%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96.1%;
@@ -34,6 +45,7 @@
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
+    --border-color: 0 1.3% 85.3%;
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
@@ -59,6 +71,18 @@
   }
 }
 
+body {
+    font-family: NeueMontreal, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    margin: 0;
+    padding: 0;
+
+    position: relative;
+    overflow-x: hidden;
+
+    -webkit-font-smoothing: antialiased!important;
+    text-rendering: optimizeLegibility;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -66,4 +90,8 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.message span.line:not(.has-annotations):hover {
+  background-color: transparent !important;
 }
