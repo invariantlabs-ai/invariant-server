@@ -24,8 +24,6 @@ attrs==23.2.0
     # via jsonschema
     # via referencing
     # via semgrep
-blis==0.7.11
-    # via thinc
 boltons==21.0.0
     # via face
     # via glom
@@ -35,10 +33,6 @@ bracex==2.4
 cachetools==5.5.0
     # via asyncache
     # via invariant-server
-catalogue==2.0.10
-    # via spacy
-    # via srsly
-    # via thinc
 certifi==2024.7.4
     # via httpcore
     # via httpx
@@ -52,17 +46,8 @@ click==8.1.7
     # via uvicorn
 click-option-group==0.5.6
     # via semgrep
-cloudpathlib==0.18.1
-    # via weasel
 colorama==0.4.6
     # via semgrep
-confection==0.1.5
-    # via thinc
-    # via weasel
-cymem==2.0.8
-    # via preshed
-    # via spacy
-    # via thinc
 defusedxml==0.7.1
     # via semgrep
 dnspython==2.6.1
@@ -80,14 +65,6 @@ fastapi-cli==0.0.4
     # via fastapi
 fastapi-utils==0.7.0
     # via invariant-server
-filelock==3.15.4
-    # via huggingface-hub
-    # via tldextract
-    # via torch
-    # via transformers
-fsspec==2024.6.1
-    # via huggingface-hub
-    # via torch
 glom==22.1.0
     # via semgrep
 h11==0.14.0
@@ -99,76 +76,35 @@ httptools==0.6.1
     # via uvicorn
 httpx==0.27.0
     # via fastapi
-huggingface-hub==0.24.5
-    # via invariant-server
-    # via tokenizers
-    # via transformers
 idna==3.7
     # via anyio
     # via email-validator
     # via httpx
     # via requests
-    # via tldextract
 invariant @ git+https://github.com/invariantlabs-ai/invariant.git@0a5489d3e647858a78f62a8f5abef2b79374ab0b
     # via invariant-server
 jinja2==3.1.4
     # via fastapi
-    # via spacy
-    # via torch
 jsonschema==4.23.0
     # via semgrep
 jsonschema-specifications==2023.12.1
     # via jsonschema
-langcodes==3.4.0
-    # via spacy
-language-data==1.2.0
-    # via langcodes
 lark==1.1.9
     # via invariant
-marisa-trie==1.2.0
-    # via language-data
 markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-mpmath==1.3.0
-    # via sympy
-murmurhash==1.0.10
-    # via preshed
-    # via spacy
-    # via thinc
-mypy-extensions==1.0.0
-    # via typing-inspect
-networkx==3.3
-    # via torch
-numpy==1.26.4
-    # via blis
-    # via invariant-server
-    # via spacy
-    # via thinc
-    # via transformers
 orjson==3.10.6
     # via fastapi
 packaging==24.1
-    # via huggingface-hub
     # via semgrep
-    # via spacy
-    # via thinc
-    # via transformers
-    # via weasel
 peewee==3.17.6
     # via semgrep
-phonenumbers==8.13.40
-    # via presidio-analyzer
 pip==24.1.2
     # via invariant
-preshed==3.0.9
-    # via spacy
-    # via thinc
-presidio-analyzer==2.2.354
-    # via invariant-server
 prometheus-client==0.20.0
     # via prometheus-fastapi-instrumentator
 prometheus-fastapi-instrumentator==7.0.0
@@ -176,14 +112,10 @@ prometheus-fastapi-instrumentator==7.0.0
 psutil==5.9.8
     # via fastapi-utils
 pydantic==2.8.2
-    # via confection
     # via fastapi
     # via fastapi-utils
     # via invariant
     # via pydantic-settings
-    # via spacy
-    # via thinc
-    # via weasel
 pydantic-core==2.20.1
     # via pydantic
 pydantic-settings==2.3.4
@@ -196,26 +128,12 @@ python-dotenv==1.0.1
 python-multipart==0.0.9
     # via fastapi
 pyyaml==6.0.1
-    # via huggingface-hub
-    # via presidio-analyzer
-    # via transformers
     # via uvicorn
 referencing==0.35.1
     # via jsonschema
     # via jsonschema-specifications
-regex==2024.5.15
-    # via presidio-analyzer
-    # via transformers
 requests==2.32.3
-    # via huggingface-hub
-    # via requests-file
     # via semgrep
-    # via spacy
-    # via tldextract
-    # via transformers
-    # via weasel
-requests-file==2.1.0
-    # via tldextract
 rich==13.7.1
     # via semgrep
     # via typer
@@ -226,73 +144,29 @@ ruamel-yaml==0.17.40
     # via semgrep
 ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
-safetensors==0.4.4
-    # via transformers
 semgrep==1.79.0
     # via invariant
-setuptools==70.3.0
-    # via marisa-trie
-    # via spacy
-    # via thinc
-    # via torch
 shellingham==1.5.4
     # via typer
-smart-open==7.0.4
-    # via weasel
 sniffio==1.3.1
     # via anyio
     # via httpx
-spacy==3.7.5
-    # via invariant-server
-    # via presidio-analyzer
-spacy-legacy==3.0.12
-    # via spacy
-spacy-loggers==1.0.5
-    # via spacy
-srsly==2.4.8
-    # via confection
-    # via spacy
-    # via thinc
-    # via weasel
 starlette==0.37.2
     # via fastapi
     # via prometheus-fastapi-instrumentator
-sympy==1.13.2
-    # via torch
 termcolor==2.4.0
     # via invariant
-thinc==8.2.5
-    # via spacy
-tldextract==5.1.2
-    # via presidio-analyzer
-tokenizers==0.19.1
-    # via transformers
 tomli==2.0.1
     # via semgrep
-torch==2.4.0
-    # via invariant-server
-tqdm==4.66.4
-    # via huggingface-hub
-    # via spacy
-    # via transformers
-transformers==4.44.0
-    # via invariant-server
 typer==0.12.3
     # via fastapi-cli
-    # via spacy
-    # via weasel
 typing-extensions==4.12.2
     # via aiosqlite
     # via fastapi
-    # via huggingface-hub
     # via pydantic
     # via pydantic-core
     # via semgrep
-    # via torch
     # via typer
-    # via typing-inspect
-typing-inspect==0.9.0
-    # via invariant-server
 ujson==5.10.0
     # via fastapi
 urllib3==2.2.2
@@ -303,17 +177,9 @@ uvicorn==0.30.1
     # via invariant-server
 uvloop==0.19.0
     # via uvicorn
-wasabi==1.1.3
-    # via spacy
-    # via thinc
-    # via weasel
 watchfiles==0.22.0
     # via uvicorn
 wcmatch==8.5.2
     # via semgrep
-weasel==0.4.1
-    # via spacy
 websockets==12.0
     # via uvicorn
-wrapt==1.16.0
-    # via smart-open
