@@ -5,6 +5,7 @@ import { editor as MonacoEditor } from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
 import React from "react";
 import { BsArrowsCollapse, BsArrowsExpand, BsCaretDownFill, BsCaretRightFill, BsChatFill,BsDownload,BsPersonFill, BsRobot } from "react-icons/bs";
+import {v5 as uuidv5} from 'uuid';
 
 import { AnnotatedJSON, Annotation, GroupedAnnotation } from "@/components/traceview/annotations";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,22 @@ export const TraceView = React.forwardRef<ScrollHandle, TraceViewProps>((props: 
 
   const sideBySide = props.sideBySide;
 
+  const download = async (data: string) => {
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+
+    const uuidhash = uuidv5(inputData, 'e6aa03d1-3e94-4691-a50a-0d7d3542c5b4');
+    const fileName = `trace-${uuidhash}.json`;
+    
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     setAnnotatedJSON(AnnotatedJSON.from_mappings(annotations));
   }, [annotations]);
@@ -99,7 +116,7 @@ export const TraceView = React.forwardRef<ScrollHandle, TraceViewProps>((props: 
         <div className="flex gap-2">
           <Button className="p-4 h-[40px] w-[42px] rounded-[10px]" variant="inline" onClick={() => console.log('Collapse')}><BsArrowsCollapse /></Button>
           <Button className="p-4 h-[40px] w-[42px] rounded-[10px]" variant="inline" onClick={() => console.log('Expand')}><BsArrowsExpand /></Button>
-          <Button className="p-4 h-[40px] w-[42px] rounded-[10px]" variant="inline" onClick={() => console.log('Download')}><BsDownload /></Button>
+          <Button className="p-4 h-[40px] w-[42px] rounded-[10px]" variant="inline" onClick={() => download(props.inputData)}><BsDownload /></Button>
         </div>
       </h2>
       {!sideBySide && (
