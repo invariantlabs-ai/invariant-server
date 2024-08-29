@@ -95,6 +95,7 @@ const App = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Cache-Control": "force-cache",
         },
         body: JSON.stringify({ trace: JSON.parse(inputData), policy: policyCode }),
       });
