@@ -31,9 +31,10 @@ RUN curl -sSf https://rye.astral.sh/get | RYE_INSTALL_OPTION="--yes" RYE_TOOLCHA
 
 COPY --chown=app requirements.lock pyproject.toml .python-version README.md ./
 
-RUN /bin/bash -c 'source $RYE_HOME/env && UV_NO_CACHE=1 rye sync' && \
+RUN /bin/bash -c 'source $RYE_HOME/env && UV_NO_CACHE=1 rye sync --features=full' && \
     curl https://semgrep.dev/c/r/bash -s -o /tmp/bash && \
     curl https://semgrep.dev/c/r/python.lang.security -s -o /tmp/python.lang.security
+RUN rye run python -m spacy download en_core_web_lg
 
 COPY --chown=app server ./server
 COPY --from=frontend-builder --chown=app /app/dist ./playground/dist
