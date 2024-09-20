@@ -91,6 +91,7 @@ const App = () => {
       localStorage.setItem("input", inputData);
 
       // Analyze the policy with the input data
+      const startTime = performance.now();
       const analyzeResponse = await fetch(`/api/policy/analyze`, {
         method: "POST",
         headers: {
@@ -99,6 +100,8 @@ const App = () => {
         },
         body: JSON.stringify({ trace: JSON.parse(inputData), policy: policyCode }),
       });
+      const endTime = performance.now();
+      console.log(`Policy analysis took ${endTime - startTime} ms`);
 
       if (analyzeResponse.status !== 200) {
         throw new Error(analyzeResponse.statusText);

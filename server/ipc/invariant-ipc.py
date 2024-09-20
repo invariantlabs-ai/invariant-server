@@ -105,6 +105,15 @@ def detect_all(self, code: str, lang: str):
         issues.append(CodeIssue(description=description, severity=severity))
     return issues
 
+def run_pii_once(text):
+    policy = Policy.from_string("""
+    from invariant.detectors import pii
+
+    raise "found personal information in the trace" if:
+        (msg: Message)
+        any(pii(msg.content))
+    """)
+    return policy.analyze([{"role": "user", "content": "Hi there Alice!"}])
 
 if __name__ == "__main__":
     mp.set_start_method("fork")
@@ -115,18 +124,14 @@ if __name__ == "__main__":
 
     if nsjail:
         from invariant.runtime.utils.code import SemgrepDetector
-
         SemgrepDetector.detect_all = detect_all
 
     # Ensure the socket does not already exist
     server_socket.bind(socket_path)
     server_socket.listen(1024)
 
-    # pii([Message(role="user", content="test")])
-    # cache invariant functions
-    # prompt_injection([Message(role="user", content="test")])
-    # moderated([Message(role="user", content="test")])
-    # semgrep([Message(role="user", content="print(1)")], lang="python")
+    # Run PII once to load
+    run_pii_once("My name is Alice!")
 
     while True:
         client_sock, _ = server_socket.accept()
