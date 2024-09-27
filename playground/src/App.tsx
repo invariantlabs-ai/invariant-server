@@ -1,7 +1,7 @@
 import { Base64 } from "js-base64";
 import { useEffect, useRef, useState } from "react";
 import React from "react";
-import { BsPlayFill, BsShare } from "react-icons/bs";
+import { BsPlayFill, BsGithub, BsShare } from "react-icons/bs";
 import { useWindowSize } from "usehooks-ts";
 
 import InvariantLogoIcon from "@/assets/logo";
@@ -181,7 +181,7 @@ const App = () => {
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-2 text-[16pt] font-medium transition-colors duration-200 py-[2pt] px-[5pt] rounded-[4pt] h-[30pt] my-[10pt] -ml-[2pt] hover:cursor-pointer hover:bg-black/[0.08]">
             <InvariantLogoIcon className="h-[20pt] w-[20pt]" />
-            <h1 className="text-lg">Invariant Playground</h1>
+            <h1 className="text-lg"><a href="https://invariantlabs.ai">Invariant Playground</a></h1>
           </div>
           <Examples examples={examples} onSelect={handleExampleSelect} />
         </div>
@@ -190,6 +190,9 @@ const App = () => {
             Share
           </button>*/}
           <Button onClick={handleShare} variant="secondary"><BsShare className="inline relative mr-[5pt]"/>Share</Button>
+          <Button onClick={() => window.location.href='https://github.com/invariantlabs-ai/invariant'} variant="secondary">
+            <BsGithub className="inline relative mr-[5pt]"/>Github
+          </Button>
           <Button onClick={handleEvaluate} disabled={loading}>
             {loading ? (
               <Spinning className="h-5 w-5 text-white mr-[5pt]"/>
