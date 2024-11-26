@@ -44,7 +44,7 @@ jobs:
           cosign-release: 'v2.2.4'
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@cf91d736b7e1f3b38e82db6db3682b27d8c55580 # v2.1.0
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: all
 
@@ -52,7 +52,7 @@ jobs:
       # multi-platform images and export cache
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
+        uses: docker/setup-buildx-action@v3
 
       # Login against a Docker registry except on PR
       # https://github.com/docker/login-action
@@ -76,7 +76,7 @@ jobs:
       # https://github.com/docker/build-push-action
       - name: Build and push Docker image
         id: build-and-push
-        uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
