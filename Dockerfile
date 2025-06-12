@@ -17,7 +17,7 @@ RUN useradd --create-home --shell /bin/bash app && \
     apt-get install -y --no-install-recommends git curl && \
     echo "deb http://deb.debian.org/debian buster main" >> /etc/apt/sources.list && \
     apt-get update && \
-    apt-get install -y --no-install-recommends libprotobuf17 libnl-3-200 libnl-route-3-200 && \
+    apt-get install -y --no-install-recommends libnl-3-200 libnl-route-3-200 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
